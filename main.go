@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-	fmt.Println("hola")
 	provider := aws.Provider()
 	dataSources := provider.DataSources()
 	for _, v := range dataSources {
