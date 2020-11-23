@@ -20,7 +20,7 @@ require (
 	github.com/hashicorp/terraform-exec v0.11.0 // indirect
 	github.com/hashicorp/terraform-json v0.6.0 // indirect
 	github.com/hashicorp/terraform-plugin-go v0.2.0 // indirect
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.3.0 // indirect
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.3.0
 	github.com/hashicorp/yamux v0.0.0-20200609203250-aecfd211c9ce // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
