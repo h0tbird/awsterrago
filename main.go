@@ -16,18 +16,24 @@ func main() {
 	ctx := context.Background()
 	provider := aws.Provider()
 
-	rc := &terraform.ResourceConfig{
-		ComputedKeys: []string{},
-		Raw:          map[string]interface{}{},
+	// Configure the provider
+	provider.Configure(ctx, &terraform.ResourceConfig{
 		Config: map[string]interface{}{
 			"region": "us-east-2",
 		},
-	}
+	})
 
-	provider.Configure(ctx, rc)
-
+	// List all data sources
+	fmt.Println("--[Data sources]----------------")
 	dataSources := provider.DataSources()
 	for _, v := range dataSources {
+		fmt.Println(v.Name)
+	}
+
+	// List all resources
+	fmt.Println("--[Resources]----------------")
+	resources := provider.Resources()
+	for _, v := range resources {
 		fmt.Println(v.Name)
 	}
 }
