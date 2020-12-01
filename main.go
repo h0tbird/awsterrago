@@ -12,6 +12,7 @@ import (
 	"os"
 
 	// terraform
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 )
@@ -50,6 +51,14 @@ func main() {
 	}
 
 	// Apply
-	istate, _ := AWSS3Bucket.Apply(ctx, instanceState, instanceDiff, provider.Meta())
+	istate, diags := AWSS3Bucket.Apply(ctx, instanceState, instanceDiff, provider.Meta())
+	if diags != nil && diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				fmt.Printf("error configuring S3 bucket: %s", d.Summary)
+			}
+		}
+	}
+
 	fmt.Println(istate)
 }
