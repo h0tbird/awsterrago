@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${fileDirname}",
+            "env": {
+                "AWS_ACCESS_KEY_ID":"${env:AWS_ACCESS_KEY_ID}",
+                "AWS_SECRET_ACCESS_KEY":"${env:AWS_SECRET_ACCESS_KEY}"
+            },
+            "args": []
+        }
+    ]
+}

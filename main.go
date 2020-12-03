@@ -27,11 +27,19 @@ func main() {
 	provider := aws.Provider()
 
 	// Configure the provider
-	provider.Configure(ctx, &terraform.ResourceConfig{
+	diags := provider.Configure(ctx, &terraform.ResourceConfig{
 		Config: map[string]interface{}{
 			"region": "us-east-2",
 		},
 	})
+
+	if diags != nil && diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				fmt.Printf("error configuring the provider: %s", d.Summary)
+			}
+		}
+	}
 
 	// Configure the resource
 	resourceConfig := &terraform.ResourceConfig{
@@ -40,18 +48,18 @@ func main() {
 		},
 	}
 
-	instanceState := &terraform.InstanceState{}
+	stateBefore := &terraform.InstanceState{}
 	AWSS3Bucket := provider.ResourcesMap["aws_s3_bucket"]
 
 	// Diff
-	instanceDiff, err := AWSS3Bucket.Diff(ctx, instanceState, resourceConfig, provider.Meta())
+	instanceDiff, err := AWSS3Bucket.Diff(ctx, stateBefore, resourceConfig, provider.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
 
 	// Apply
-	istate, diags := AWSS3Bucket.Apply(ctx, instanceState, instanceDiff, provider.Meta())
+	stateAfter, diags := AWSS3Bucket.Apply(ctx, stateBefore, instanceDiff, provider.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -60,5 +68,15 @@ func main() {
 		}
 	}
 
-	fmt.Println(istate)
+	fmt.Println("\nState before")
+	fmt.Println("------------")
+	fmt.Println(stateBefore)
+
+	fmt.Println("\nDiff")
+	fmt.Println("------------")
+	fmt.Println(instanceDiff)
+
+	fmt.Println("\nState after")
+	fmt.Println("-----------")
+	fmt.Println(stateAfter)
 }
