@@ -48,18 +48,34 @@ func main() {
 		},
 	}
 
-	stateBefore := &terraform.InstanceState{}
+	state0 := &terraform.InstanceState{}
 	AWSS3Bucket := provider.ResourcesMap["aws_s3_bucket"]
 
-	// Diff
-	instanceDiff, err := AWSS3Bucket.Diff(ctx, stateBefore, resourceConfig, provider.Meta())
+	fmt.Println("\nState before")
+	fmt.Println("------------")
+	fmt.Println(state0)
+
+	//-------------------------------------------------------------------------
+	// Round-1
+	//-------------------------------------------------------------------------
+
+	// Diff-1
+	diff1, err := AWSS3Bucket.Diff(ctx, state0, resourceConfig, provider.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
 
-	// Apply
-	stateAfter, diags := AWSS3Bucket.Apply(ctx, stateBefore, instanceDiff, provider.Meta())
+	fmt.Println("\nDiff-1")
+	fmt.Println("------")
+	fmt.Println(diff1)
+
+	// Apply-1
+	if diff1 == nil {
+		os.Exit(0)
+	}
+
+	state1, diags := AWSS3Bucket.Apply(ctx, state0, diff1, provider.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -68,15 +84,40 @@ func main() {
 		}
 	}
 
-	fmt.Println("\nState before")
-	fmt.Println("------------")
-	fmt.Println(stateBefore)
+	fmt.Println("\nState after apply-1")
+	fmt.Println("-------------------")
+	fmt.Println(state1)
 
-	fmt.Println("\nDiff")
-	fmt.Println("------------")
-	fmt.Println(instanceDiff)
+	//-------------------------------------------------------------------------
+	// Round-2
+	//-------------------------------------------------------------------------
 
-	fmt.Println("\nState after")
-	fmt.Println("-----------")
-	fmt.Println(stateAfter)
+	// Diff-2
+	diff2, err := AWSS3Bucket.Diff(ctx, state1, resourceConfig, provider.Meta())
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
+
+	fmt.Println("\nDiff-2")
+	fmt.Println("------")
+	fmt.Println(diff2)
+
+	// Apply-2
+	if diff2 == nil {
+		os.Exit(0)
+	}
+
+	state2, diags := AWSS3Bucket.Apply(ctx, state1, diff2, provider.Meta())
+	if diags != nil && diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				fmt.Printf("error configuring S3 bucket: %s", d.Summary)
+			}
+		}
+	}
+
+	fmt.Println("\nState after apply-2")
+	fmt.Println("-------------------")
+	fmt.Println(state2)
 }
