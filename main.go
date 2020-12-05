@@ -24,10 +24,10 @@ import (
 func main() {
 
 	ctx := context.Background()
-	provider := aws.Provider()
+	p := aws.Provider()
 
 	// Configure the provider
-	diags := provider.Configure(ctx, &terraform.ResourceConfig{
+	diags := p.Configure(ctx, &terraform.ResourceConfig{
 		Config: map[string]interface{}{
 			"region": "us-east-2",
 		},
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	state0 := &terraform.InstanceState{}
-	AWSS3Bucket := provider.ResourcesMap["aws_s3_bucket"]
+	AWSS3Bucket := p.ResourcesMap["aws_s3_bucket"]
 
 	fmt.Println("\nState before")
 	fmt.Println("------------")
@@ -60,7 +60,7 @@ func main() {
 	//-------------------------------------------------------------------------
 
 	// Diff-1
-	diff1, err := AWSS3Bucket.Diff(ctx, state0, resourceConfig, provider.Meta())
+	diff1, err := AWSS3Bucket.Diff(ctx, state0, resourceConfig, p.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
@@ -75,7 +75,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	state1, diags := AWSS3Bucket.Apply(ctx, state0, diff1, provider.Meta())
+	state1, diags := AWSS3Bucket.Apply(ctx, state0, diff1, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -93,7 +93,7 @@ func main() {
 	//-------------------------------------------------------------------------
 
 	// Diff-2
-	diff2, err := AWSS3Bucket.Diff(ctx, state1, resourceConfig, provider.Meta())
+	diff2, err := AWSS3Bucket.Diff(ctx, state1, resourceConfig, p.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
@@ -108,7 +108,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	state2, diags := AWSS3Bucket.Apply(ctx, state1, diff2, provider.Meta())
+	state2, diags := AWSS3Bucket.Apply(ctx, state1, diff2, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
