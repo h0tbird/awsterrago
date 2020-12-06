@@ -1,7 +1,7 @@
 package main
 
 //----------------------------------------------------------------
-//
+// Imports
 //----------------------------------------------------------------
 
 import (
@@ -18,7 +18,7 @@ import (
 )
 
 //----------------------------------------------------------------
-//
+// Main
 //----------------------------------------------------------------
 
 func main() {
@@ -48,34 +48,36 @@ func main() {
 		},
 	}
 
-	state0 := &terraform.InstanceState{}
+	state0 := &terraform.InstanceState{ID: "my-nice-bucket"}
 	AWSS3Bucket := p.ResourcesMap["aws_s3_bucket"]
-
-	fmt.Println("\nState before")
-	fmt.Println("------------")
-	fmt.Println(state0)
 
 	//-------------------------------------------------------------------------
 	// Round-1
 	//-------------------------------------------------------------------------
 
+	// Refresh-1
+	state1, diags := AWSS3Bucket.RefreshWithoutUpgrade(ctx, state0, p.Meta())
+	if diags != nil && diags.HasError() {
+		for _, d := range diags {
+			if d.Severity == diag.Error {
+				fmt.Printf("error reading the instance state: %s", d.Summary)
+			}
+		}
+	}
+
 	// Diff-1
-	diff1, err := AWSS3Bucket.Diff(ctx, state0, resourceConfig, p.Meta())
+	diff1, err := AWSS3Bucket.Diff(ctx, state1, resourceConfig, p.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
-
-	fmt.Println("\nDiff-1")
-	fmt.Println("------")
-	fmt.Println(diff1)
 
 	// Apply-1
 	if diff1 == nil {
 		os.Exit(0)
 	}
 
-	state1, diags := AWSS3Bucket.Apply(ctx, state0, diff1, p.Meta())
+	state2, diags := AWSS3Bucket.Apply(ctx, state1, diff1, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -86,29 +88,25 @@ func main() {
 
 	fmt.Println("\nState after apply-1")
 	fmt.Println("-------------------")
-	fmt.Println(state1)
+	fmt.Println(state2)
 
 	//-------------------------------------------------------------------------
 	// Round-2
 	//-------------------------------------------------------------------------
 
 	// Diff-2
-	diff2, err := AWSS3Bucket.Diff(ctx, state1, resourceConfig, p.Meta())
+	diff2, err := AWSS3Bucket.Diff(ctx, state2, resourceConfig, p.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
-
-	fmt.Println("\nDiff-2")
-	fmt.Println("------")
-	fmt.Println(diff2)
 
 	// Apply-2
 	if diff2 == nil {
 		os.Exit(0)
 	}
 
-	state2, diags := AWSS3Bucket.Apply(ctx, state1, diff2, p.Meta())
+	state3, diags := AWSS3Bucket.Apply(ctx, state2, diff2, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -119,5 +117,5 @@ func main() {
 
 	fmt.Println("\nState after apply-2")
 	fmt.Println("-------------------")
-	fmt.Println(state2)
+	fmt.Println(state3)
 }
