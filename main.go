@@ -48,14 +48,19 @@ func main() {
 		},
 	}
 
-	state0 := &terraform.InstanceState{ID: "my-nice-bucket"}
+	// Initial state
+	state0 := &terraform.InstanceState{
+		ID: "my-nice-bucket",
+		Attributes: map[string]string{
+			"acl":           "private",
+			"force_destroy": "false",
+		},
+	}
+
+	// Resource to configure
 	AWSS3Bucket := p.ResourcesMap["aws_s3_bucket"]
 
-	//-------------------------------------------------------------------------
-	// Round-1
-	//-------------------------------------------------------------------------
-
-	// Refresh-1
+	// Refresh
 	state1, diags := AWSS3Bucket.RefreshWithoutUpgrade(ctx, state0, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
@@ -65,15 +70,16 @@ func main() {
 		}
 	}
 
-	// Diff-1
+	// Diff
 	diff1, err := AWSS3Bucket.Diff(ctx, state1, resourceConfig, p.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
 
-	// Apply-1
+	// Apply
 	if diff1 == nil {
+		fmt.Println("All good 1")
 		os.Exit(0)
 	}
 
@@ -86,36 +92,16 @@ func main() {
 		}
 	}
 
-	fmt.Println("\nState after apply-1")
-	fmt.Println("-------------------")
-	fmt.Println(state2)
-
-	//-------------------------------------------------------------------------
-	// Round-2
-	//-------------------------------------------------------------------------
-
-	// Diff-2
+	// Diff
 	diff2, err := AWSS3Bucket.Diff(ctx, state2, resourceConfig, p.Meta())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
 	}
 
-	// Apply-2
+	// Apply
 	if diff2 == nil {
+		fmt.Println("All good 2")
 		os.Exit(0)
 	}
-
-	state3, diags := AWSS3Bucket.Apply(ctx, state2, diff2, p.Meta())
-	if diags != nil && diags.HasError() {
-		for _, d := range diags {
-			if d.Severity == diag.Error {
-				fmt.Printf("error configuring S3 bucket: %s", d.Summary)
-			}
-		}
-	}
-
-	fmt.Println("\nState after apply-2")
-	fmt.Println("-------------------")
-	fmt.Println(state3)
 }
