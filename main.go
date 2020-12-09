@@ -9,6 +9,8 @@ import (
 	// stdlib
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 
 	// terraform
@@ -22,6 +24,10 @@ import (
 //----------------------------------------------------------------
 
 func main() {
+
+	// Send all logs to /dev/null
+	log.SetOutput(ioutil.Discard)
+	defer log.SetOutput(os.Stderr)
 
 	ctx := context.Background()
 	p := aws.Provider()
@@ -77,12 +83,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Apply
 	if diff1 == nil {
 		fmt.Println("All good 1")
 		os.Exit(0)
 	}
 
+	// Apply
 	state2, diags := AWSS3Bucket.Apply(ctx, state1, diff1, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
@@ -99,7 +105,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Apply
 	if diff2 == nil {
 		fmt.Println("All good 2")
 		os.Exit(0)
