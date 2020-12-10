@@ -25,10 +25,10 @@ import (
 
 // Foo ...
 type Foo struct {
-	provider       *schema.Provider
-	resourceType   string
-	resourceConfig *terraform.ResourceConfig
-	instanceState  *terraform.InstanceState
+	Provider       *schema.Provider
+	ResourceType   string
+	ResourceConfig *terraform.ResourceConfig
+	InstanceState  *terraform.InstanceState
 }
 
 //----------------------------------------------------------------
@@ -39,11 +39,11 @@ type Foo struct {
 func (f *Foo) Reconcile(ctx context.Context) error {
 
 	// Resource pointer
-	resource := f.provider.ResourcesMap[f.resourceType]
+	resource := f.Provider.ResourcesMap[f.ResourceType]
 
 	// Refresh
 	logrus.Info("Refreshing the state...")
-	state1, diags := resource.RefreshWithoutUpgrade(ctx, f.instanceState, f.provider.Meta())
+	state1, diags := resource.RefreshWithoutUpgrade(ctx, f.InstanceState, f.Provider.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -54,7 +54,7 @@ func (f *Foo) Reconcile(ctx context.Context) error {
 
 	// Diff
 	logrus.Info("Diffing state and config...")
-	diff1, err := resource.Diff(ctx, state1, f.resourceConfig, f.provider.Meta())
+	diff1, err := resource.Diff(ctx, state1, f.ResourceConfig, f.Provider.Meta())
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (f *Foo) Reconcile(ctx context.Context) error {
 
 	// Apply
 	logrus.Info("Applying changes...")
-	state2, diags := resource.Apply(ctx, state1, diff1, f.provider.Meta())
+	state2, diags := resource.Apply(ctx, state1, diff1, f.Provider.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -76,7 +76,7 @@ func (f *Foo) Reconcile(ctx context.Context) error {
 
 	// Diff
 	logrus.Info("Diffing state and config...")
-	diff2, err := resource.Diff(ctx, state2, f.resourceConfig, f.provider.Meta())
+	diff2, err := resource.Diff(ctx, state2, f.ResourceConfig, f.Provider.Meta())
 	if err != nil {
 		return err
 	}
