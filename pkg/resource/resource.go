@@ -92,5 +92,6 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		return nil
 	}
 
+	// Return
 	return fmt.Errorf("error state is divergent")
 }

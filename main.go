@@ -10,6 +10,7 @@ import (
 	"context"
 	"io/ioutil"
 	"log"
+	"sync"
 
 	// community
 	"github.com/h0tbird/awsterrago/pkg/resource"
@@ -36,12 +37,13 @@ func init() {
 func main() {
 
 	ctx := context.Background()
-	p := aws.Provider()
+	var wg sync.WaitGroup
 
 	//------------------------
 	// Configure the provider
 	//------------------------
 
+	p := aws.Provider()
 	logrus.WithFields(logrus.Fields{"region": "us-east-2"}).Info("Configuring the provider")
 	diags := p.Configure(ctx, &terraform.ResourceConfig{
 		Config: map[string]interface{}{
@@ -77,9 +79,13 @@ func main() {
 		},
 	}
 
-	if err := myNiceBucket.Reconcile(ctx, p); err != nil {
-		logrus.Fatal(err)
-	}
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := myNiceBucket.Reconcile(ctx, p); err != nil {
+			logrus.Fatal(err)
+		}
+	}(&wg)
 
 	//--------------------------
 	// Create an ugly S3 bucket
@@ -101,7 +107,17 @@ func main() {
 		},
 	}
 
-	if err := myUglyBucket.Reconcile(ctx, p); err != nil {
-		logrus.Fatal(err)
-	}
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		if err := myUglyBucket.Reconcile(ctx, p); err != nil {
+			logrus.Fatal(err)
+		}
+	}(&wg)
+
+	//------------------
+	// Block until done
+	//------------------
+
+	wg.Wait()
 }
