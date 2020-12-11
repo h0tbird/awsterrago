@@ -51,8 +51,11 @@ func main() {
 		}
 	}
 
+	//--------------------
+	// Create a S3 bucket
+	//--------------------
+
 	(&resource.Handler{
-		Provider:     p,
 		ResourceType: "aws_s3_bucket",
 		ResourceConfig: &terraform.ResourceConfig{
 			Config: map[string]interface{}{
@@ -66,5 +69,5 @@ func main() {
 				"force_destroy": "false",
 			},
 		},
-	}).Reconcile(ctx)
+	}).Reconcile(ctx, p)
 }
