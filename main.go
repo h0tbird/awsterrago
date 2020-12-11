@@ -13,7 +13,7 @@ import (
 	"os"
 
 	// community
-	"github.com/h0tbird/awsterrago/pkg/foo"
+	"github.com/h0tbird/awsterrago/pkg/resource"
 	"github.com/sirupsen/logrus"
 
 	// terraform
@@ -51,7 +51,7 @@ func main() {
 		}
 	}
 
-	(&foo.Foo{
+	(&resource.Handler{
 		Provider:     p,
 		ResourceType: "aws_s3_bucket",
 		ResourceConfig: &terraform.ResourceConfig{
