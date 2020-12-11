@@ -38,7 +38,10 @@ func main() {
 	ctx := context.Background()
 	p := aws.Provider()
 
+	//------------------------
 	// Configure the provider
+	//------------------------
+
 	logrus.WithFields(logrus.Fields{"region": "us-east-2"}).Info("Configuring the provider")
 	diags := p.Configure(ctx, &terraform.ResourceConfig{
 		Config: map[string]interface{}{
@@ -54,11 +57,11 @@ func main() {
 		}
 	}
 
-	//--------------------
-	// Create a S3 bucket
-	//--------------------
+	//-------------------------
+	// Create a nice S3 bucket
+	//-------------------------
 
-	(&resource.Handler{
+	myNiceBucket := &resource.Handler{
 		ResourceType: "aws_s3_bucket",
 		ResourceConfig: &terraform.ResourceConfig{
 			Config: map[string]interface{}{
@@ -72,5 +75,33 @@ func main() {
 				"force_destroy": "false",
 			},
 		},
-	}).Reconcile(ctx, p)
+	}
+
+	if err := myNiceBucket.Reconcile(ctx, p); err != nil {
+		logrus.Fatal(err)
+	}
+
+	//--------------------------
+	// Create an ugly S3 bucket
+	//--------------------------
+
+	myUglyBucket := &resource.Handler{
+		ResourceType: "aws_s3_bucket",
+		ResourceConfig: &terraform.ResourceConfig{
+			Config: map[string]interface{}{
+				"bucket": "my-ugly-bucket",
+			},
+		},
+		InstanceState: &terraform.InstanceState{
+			ID: "my-ugly-bucket",
+			Attributes: map[string]string{
+				"acl":           "private",
+				"force_destroy": "false",
+			},
+		},
+	}
+
+	if err := myUglyBucket.Reconcile(ctx, p); err != nil {
+		logrus.Fatal(err)
+	}
 }
