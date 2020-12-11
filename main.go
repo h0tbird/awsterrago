@@ -10,7 +10,6 @@ import (
 	"context"
 	"io/ioutil"
 	"log"
-	"os"
 
 	// community
 	"github.com/h0tbird/awsterrago/pkg/resource"
@@ -23,20 +22,24 @@ import (
 )
 
 //----------------------------------------------------------------
+// Init
+//----------------------------------------------------------------
+
+func init() {
+	log.SetOutput(ioutil.Discard)
+}
+
+//----------------------------------------------------------------
 // Main
 //----------------------------------------------------------------
 
 func main() {
 
-	// Send all logs to /dev/null
-	log.SetOutput(ioutil.Discard)
-	defer log.SetOutput(os.Stderr)
-
 	ctx := context.Background()
 	p := aws.Provider()
 
 	// Configure the provider
-	logrus.Info("Configuring the provider...")
+	logrus.WithFields(logrus.Fields{"region": "us-east-2"}).Info("Configuring the provider")
 	diags := p.Configure(ctx, &terraform.ResourceConfig{
 		Config: map[string]interface{}{
 			"region": "us-east-2",

@@ -37,12 +37,18 @@ type Handler struct {
 // Reconcile ...
 func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
+	// Fixed log fields
+	logFields := logrus.Fields{
+		"type": h.ResourceType,
+		"id":   h.InstanceState.ID,
+	}
+
 	// Resource pointer
-	resource := p.ResourcesMap[h.ResourceType]
+	r := p.ResourcesMap[h.ResourceType]
 
 	// Refresh
-	logrus.Info("Refreshing the state...")
-	state1, diags := resource.RefreshWithoutUpgrade(ctx, h.InstanceState, p.Meta())
+	logrus.WithFields(logFields).Info("Refreshing the state")
+	state1, diags := r.RefreshWithoutUpgrade(ctx, h.InstanceState, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -52,19 +58,20 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	}
 
 	// Diff
-	logrus.Info("Diffing state and config...")
-	diff1, err := resource.Diff(ctx, state1, h.ResourceConfig, p.Meta())
+	logrus.WithFields(logFields).Info("Diffing state and config")
+	diff1, err := r.Diff(ctx, state1, h.ResourceConfig, p.Meta())
 	if err != nil {
 		return err
 	}
 
 	if diff1 == nil {
+		logrus.WithFields(logFields).Info("All good")
 		return nil
 	}
 
 	// Apply
-	logrus.Info("Applying changes...")
-	state2, diags := resource.Apply(ctx, state1, diff1, p.Meta())
+	logrus.WithFields(logFields).Info("Applying changes")
+	state2, diags := r.Apply(ctx, state1, diff1, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -74,15 +81,16 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	}
 
 	// Diff
-	logrus.Info("Diffing state and config...")
-	diff2, err := resource.Diff(ctx, state2, h.ResourceConfig, p.Meta())
+	logrus.WithFields(logFields).Info("Diffing state and config")
+	diff2, err := r.Diff(ctx, state2, h.ResourceConfig, p.Meta())
 	if err != nil {
 		return err
 	}
 
-	if diff2 != nil {
-		return fmt.Errorf("error state is divergent")
+	if diff2 == nil {
+		logrus.WithFields(logFields).Info("All good")
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("error state is divergent")
 }
