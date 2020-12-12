@@ -26,7 +26,7 @@ import (
 // Handler ...
 type Handler struct {
 	ResourceType   string
-	ResourceConfig *terraform.ResourceConfig
+	ResourceConfig map[string]interface{}
 	InstanceState  *terraform.InstanceState
 }
 
@@ -43,12 +43,15 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		"id":   h.InstanceState.ID,
 	}
 
-	// Resource pointer
-	r := p.ResourcesMap[h.ResourceType]
+	// Resource pointer and config
+	rp := p.ResourcesMap[h.ResourceType]
+	rc := &terraform.ResourceConfig{
+		Config: h.ResourceConfig,
+	}
 
 	// Refresh
 	logrus.WithFields(logFields).Info("Refreshing the state")
-	state1, diags := r.RefreshWithoutUpgrade(ctx, h.InstanceState, p.Meta())
+	state1, diags := rp.RefreshWithoutUpgrade(ctx, h.InstanceState, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -59,7 +62,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
 	// Diff
 	logrus.WithFields(logFields).Info("Diffing state and config")
-	diff1, err := r.Diff(ctx, state1, h.ResourceConfig, p.Meta())
+	diff1, err := rp.Diff(ctx, state1, rc, p.Meta())
 	if err != nil {
 		return err
 	}
@@ -71,7 +74,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
 	// Apply
 	logrus.WithFields(logFields).Info("Applying changes")
-	state2, diags := r.Apply(ctx, state1, diff1, p.Meta())
+	state2, diags := rp.Apply(ctx, state1, diff1, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -82,7 +85,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
 	// Diff
 	logrus.WithFields(logFields).Info("Diffing state and config")
-	diff2, err := r.Diff(ctx, state2, h.ResourceConfig, p.Meta())
+	diff2, err := rp.Diff(ctx, state2, rc, p.Meta())
 	if err != nil {
 		return err
 	}

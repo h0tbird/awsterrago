@@ -65,10 +65,8 @@ func main() {
 
 	myNiceBucket := &resource.Handler{
 		ResourceType: "aws_s3_bucket",
-		ResourceConfig: &terraform.ResourceConfig{
-			Config: map[string]interface{}{
-				"bucket": "my-nice-bucket",
-			},
+		ResourceConfig: map[string]interface{}{
+			"bucket": "my-nice-bucket",
 		},
 		InstanceState: &terraform.InstanceState{
 			ID: "my-nice-bucket",
@@ -93,10 +91,8 @@ func main() {
 
 	myUglyBucket := &resource.Handler{
 		ResourceType: "aws_s3_bucket",
-		ResourceConfig: &terraform.ResourceConfig{
-			Config: map[string]interface{}{
-				"bucket": "my-ugly-bucket",
-			},
+		ResourceConfig: map[string]interface{}{
+			"bucket": "my-ugly-bucket",
 		},
 		InstanceState: &terraform.InstanceState{
 			ID: "my-ugly-bucket",
