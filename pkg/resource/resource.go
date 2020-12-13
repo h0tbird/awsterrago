@@ -25,6 +25,7 @@ import (
 
 // Handler ...
 type Handler struct {
+	ResourceID     string
 	ResourceType   string
 	ResourceConfig map[string]interface{}
 	InstanceState  *terraform.InstanceState
@@ -47,6 +48,11 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	rp := p.ResourcesMap[h.ResourceType]
 	rc := &terraform.ResourceConfig{
 		Config: h.ResourceConfig,
+	}
+
+	// Set ID if provided
+	if h.ResourceID != "" {
+		h.InstanceState.ID = h.ResourceID
 	}
 
 	// Refresh

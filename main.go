@@ -64,12 +64,12 @@ func main() {
 	//-------------------------
 
 	myNiceBucket := &resource.Handler{
+		ResourceID:   "my-nice-bucket",
 		ResourceType: "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-nice-bucket",
 		},
 		InstanceState: &terraform.InstanceState{
-			ID: "my-nice-bucket",
 			Attributes: map[string]string{
 				"acl":           "private",
 				"force_destroy": "false",
@@ -90,12 +90,12 @@ func main() {
 	//--------------------------
 
 	myUglyBucket := &resource.Handler{
+		ResourceID:   "my-ugly-bucket",
 		ResourceType: "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-ugly-bucket",
 		},
 		InstanceState: &terraform.InstanceState{
-			ID: "my-ugly-bucket",
 			Attributes: map[string]string{
 				"acl":           "private",
 				"force_destroy": "false",
