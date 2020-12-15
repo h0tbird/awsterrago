@@ -40,8 +40,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
 	// Fixed log fields
 	logFields := logrus.Fields{
+		"id":   h.ResourceID,
 		"type": h.ResourceType,
-		"id":   h.InstanceState.ID,
 	}
 
 	// Resource pointer and config
@@ -50,9 +50,11 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		Config: h.ResourceConfig,
 	}
 
-	// Set ID if provided
-	if h.ResourceID != "" {
-		h.InstanceState.ID = h.ResourceID
+	// Instance state
+	if h.InstanceState == nil {
+		h.InstanceState = &terraform.InstanceState{
+			ID: h.ResourceID,
+		}
 	}
 
 	// Refresh
