@@ -81,6 +81,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	}
 
 	// Apply
+	fooFields := logFields
+	fooFields["diff"] = diff1.Attributes
 	logrus.WithFields(logFields).Info("Applying changes")
 	state2, diags := rp.Apply(ctx, state1, diff1, p.Meta())
 	if diags != nil && diags.HasError() {

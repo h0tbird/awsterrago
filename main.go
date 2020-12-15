@@ -119,7 +119,37 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	// AWS::IAM::Role            | nodes.cluster-api-provider-aws.sigs.k8s.io
+	// AWS::IAM::Role | nodes.cluster-api-provider-aws.sigs.k8s.io
+	nodesRole := &resource.Handler{
+		ResourceID:   "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceType: "aws_iam_role",
+		ResourceConfig: map[string]interface{}{
+			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
+			"assume_role_policy": `{
+				"Version": "2012-10-17",
+				"Statement": [
+				  {
+					"Effect": "Allow",
+					"Principal": {
+					  "Service": "ec2.amazonaws.com"
+					},
+					"Action": "sts:AssumeRole"
+				  }
+				]
+			  }`,
+		},
+		InstanceState: &terraform.InstanceState{
+			ID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
+			Attributes: map[string]string{
+				"force_detach_policies": "false",
+			},
+		},
+	}
+
+	if err := nodesRole.Reconcile(ctx, p); err != nil {
+		logrus.Fatal(err)
+	}
+
 	// AWS::IAM::InstanceProfile | nodes.cluster-api-provider-aws.sigs.k8s.io
 
 	// AWS::IAM::ManagedPolicy   | control-plane.cluster-api-provider-aws.sigs.k8s.io
