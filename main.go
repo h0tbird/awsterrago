@@ -62,8 +62,9 @@ func main() {
 
 	// AWS::IAM::ManagedPolicy | nodes.cluster-api-provider-aws.sigs.k8s.io
 	nodesPolicy := &resource.Handler{
-		ResourceID:   "arn:aws:iam::729179300383:policy/nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceType: "aws_iam_policy",
+		ResourcePhysicalID: "arn:aws:iam::729179300383:policy/nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceLogicalID:  "NodesPolicy",
+		ResourceType:       "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
 			"name":        "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"description": "For the Kubernetes Cloud Provider AWS nodes",
@@ -122,8 +123,9 @@ func main() {
 
 	// AWS::IAM::Role | nodes.cluster-api-provider-aws.sigs.k8s.io
 	nodesRole := &resource.Handler{
-		ResourceID:   "nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceType: "aws_iam_role",
+		ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceLogicalID:  "NodesRole",
+		ResourceType:       "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"assume_role_policy": `{
@@ -160,8 +162,9 @@ func main() {
 	//-------------------------
 
 	myNiceBucket := &resource.Handler{
-		ResourceID:   "my-nice-bucket",
-		ResourceType: "aws_s3_bucket",
+		ResourcePhysicalID: "my-nice-bucket",
+		ResourceLogicalID:  "MyNiceBucket",
+		ResourceType:       "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-nice-bucket",
 		},
@@ -180,8 +183,9 @@ func main() {
 	//--------------------------
 
 	myUglyBucket := &resource.Handler{
-		ResourceID:   "my-ugly-bucket",
-		ResourceType: "aws_s3_bucket",
+		ResourcePhysicalID: "my-ugly-bucket",
+		ResourceLogicalID:  "MyUglyBucket",
+		ResourceType:       "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-ugly-bucket",
 		},
