@@ -121,8 +121,9 @@ func main() {
 
 	// AWS::IAM::Role | nodes.cluster-api-provider-aws.sigs.k8s.io
 	nodesRole := &resource.Handler{
-		ResourceID:   "nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceType: "aws_iam_role",
+		ResourceID:        "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceType:      "aws_iam_role",
+		ImportStateIgnore: []string{"force_detach_policies"},
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"assume_role_policy": `{
@@ -137,12 +138,6 @@ func main() {
 				  }
 				]
 			  }`,
-		},
-		InstanceState: &terraform.InstanceState{
-			ID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
-			Attributes: map[string]string{
-				"force_detach_policies": "false",
-			},
 		},
 	}
 
@@ -165,17 +160,11 @@ func main() {
 	//-------------------------
 
 	myNiceBucket := &resource.Handler{
-		ResourceID:   "my-nice-bucket",
-		ResourceType: "aws_s3_bucket",
+		ResourceID:        "my-nice-bucket",
+		ResourceType:      "aws_s3_bucket",
+		ImportStateIgnore: []string{"force_destroy", "acl"},
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-nice-bucket",
-		},
-		InstanceState: &terraform.InstanceState{
-			ID: "my-nice-bucket",
-			Attributes: map[string]string{
-				"acl":           "private",
-				"force_destroy": "false",
-			},
 		},
 	}
 
@@ -192,17 +181,11 @@ func main() {
 	//--------------------------
 
 	myUglyBucket := &resource.Handler{
-		ResourceID:   "my-ugly-bucket",
-		ResourceType: "aws_s3_bucket",
+		ResourceID:        "my-ugly-bucket",
+		ResourceType:      "aws_s3_bucket",
+		ImportStateIgnore: []string{"force_destroy", "acl"},
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-ugly-bucket",
-		},
-		InstanceState: &terraform.InstanceState{
-			ID: "my-ugly-bucket",
-			Attributes: map[string]string{
-				"acl":           "private",
-				"force_destroy": "false",
-			},
 		},
 	}
 

@@ -9,6 +9,7 @@ import (
 	// stdlib
 	"context"
 	"fmt"
+	"strings"
 
 	// community
 	"github.com/sirupsen/logrus"
@@ -25,10 +26,11 @@ import (
 
 // Handler ...
 type Handler struct {
-	ResourceID     string
-	ResourceType   string
-	ResourceConfig map[string]interface{}
-	InstanceState  *terraform.InstanceState
+	ResourceID        string
+	ResourceType      string
+	ImportStateIgnore []string
+	ResourceConfig    map[string]interface{}
+	InstanceState     *terraform.InstanceState
 }
 
 //----------------------------------------------------------------
@@ -70,21 +72,35 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
 	// Diff
 	logrus.WithFields(logFields).Info("Diffing state and config")
-	diff1, err := rp.Diff(ctx, state1, rc, p.Meta())
+	diff, err := rp.Diff(ctx, state1, rc, p.Meta())
 	if err != nil {
 		return err
 	}
 
-	if diff1 == nil {
+	if diff == nil {
+		logrus.WithFields(logFields).Info("All good")
+		return nil
+	}
+
+	// Remove fields we are ignoring
+	for _, v := range h.ImportStateIgnore {
+		for k := range diff.Attributes {
+			if strings.HasPrefix(k, v) {
+				delete(diff.Attributes, k)
+			}
+		}
+	}
+
+	if len(diff.Attributes) == 0 {
 		logrus.WithFields(logFields).Info("All good")
 		return nil
 	}
 
 	// Apply
 	fooFields := logFields
-	fooFields["diff"] = diff1.Attributes
+	fooFields["diff"] = diff.Attributes
 	logrus.WithFields(logFields).Info("Applying changes")
-	state2, diags := rp.Apply(ctx, state1, diff1, p.Meta())
+	state2, diags := rp.Apply(ctx, state1, diff, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -95,12 +111,26 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 
 	// Diff
 	logrus.WithFields(logFields).Info("Diffing state and config")
-	diff2, err := rp.Diff(ctx, state2, rc, p.Meta())
+	diff, err = rp.Diff(ctx, state2, rc, p.Meta())
 	if err != nil {
 		return err
 	}
 
-	if diff2 == nil {
+	if diff == nil {
+		logrus.WithFields(logFields).Info("All good")
+		return nil
+	}
+
+	// Remove fields we are ignoring
+	for _, v := range h.ImportStateIgnore {
+		for k := range diff.Attributes {
+			if strings.HasPrefix(k, v) {
+				delete(diff.Attributes, k)
+			}
+		}
+	}
+
+	if len(diff.Attributes) == 0 {
 		logrus.WithFields(logFields).Info("All good")
 		return nil
 	}
