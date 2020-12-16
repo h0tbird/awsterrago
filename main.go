@@ -121,9 +121,8 @@ func main() {
 
 	// AWS::IAM::Role | nodes.cluster-api-provider-aws.sigs.k8s.io
 	nodesRole := &resource.Handler{
-		ResourceID:        "nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceType:      "aws_iam_role",
-		ImportStateIgnore: []string{"force_detach_policies"},
+		ResourceID:   "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceType: "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"assume_role_policy": `{
@@ -160,9 +159,8 @@ func main() {
 	//-------------------------
 
 	myNiceBucket := &resource.Handler{
-		ResourceID:        "my-nice-bucket",
-		ResourceType:      "aws_s3_bucket",
-		ImportStateIgnore: []string{"force_destroy", "acl"},
+		ResourceID:   "my-nice-bucket",
+		ResourceType: "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-nice-bucket",
 		},
@@ -181,9 +179,8 @@ func main() {
 	//--------------------------
 
 	myUglyBucket := &resource.Handler{
-		ResourceID:        "my-ugly-bucket",
-		ResourceType:      "aws_s3_bucket",
-		ImportStateIgnore: []string{"force_destroy", "acl"},
+		ResourceID:   "my-ugly-bucket",
+		ResourceType: "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-ugly-bucket",
 		},

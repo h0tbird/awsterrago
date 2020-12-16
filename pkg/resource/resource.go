@@ -1,8 +1,8 @@
 package resource
 
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Imports
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 import (
 
@@ -20,9 +20,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Fields ignored by resource type
+//-----------------------------------------------------------------------------
+
+var importStateIgnore = map[string][]string{
+	"aws_s3_bucket": []string{"force_destroy", "acl"},
+	"aws_iam_role":  []string{"force_detach_policies"},
+}
+
+//-----------------------------------------------------------------------------
 // Types
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 // Handler ...
 type Handler struct {
@@ -33,9 +42,9 @@ type Handler struct {
 	InstanceState     *terraform.InstanceState
 }
 
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Methods
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 // Reconcile ...
 func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
@@ -82,8 +91,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		return nil
 	}
 
-	// Remove fields we are ignoring
-	for _, v := range h.ImportStateIgnore {
+	// Remove the fields we are ignoring
+	for _, v := range importStateIgnore[h.ResourceType] {
 		for k := range diff.Attributes {
 			if strings.HasPrefix(k, v) {
 				delete(diff.Attributes, k)
@@ -121,8 +130,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		return nil
 	}
 
-	// Remove fields we are ignoring
-	for _, v := range h.ImportStateIgnore {
+	// Remove the fields we are ignoring
+	for _, v := range importStateIgnore[h.ResourceType] {
 		for k := range diff.Attributes {
 			if strings.HasPrefix(k, v) {
 				delete(diff.Attributes, k)
