@@ -27,6 +27,7 @@ import (
 //----------------------------------------------------------------
 
 func init() {
+	// TODO: replace logrus with zap logger
 	log.SetOutput(ioutil.Discard)
 }
 

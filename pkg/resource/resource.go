@@ -61,7 +61,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		Config: h.ResourceConfig,
 	}
 
-	// Instance state
+	// TODO: Implement a stateKeeper interface with read and write method signatures.
+	// Call the provided read method and default to empty state if none is available.
 	if h.InstanceState == nil {
 		h.InstanceState = &terraform.InstanceState{
 			ID: h.ResourceID,
@@ -92,6 +93,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	}
 
 	// Remove the fields we are ignoring
+	// TODO: log a list of updated attributes
 	for _, v := range importStateIgnore[h.ResourceType] {
 		for k := range diff.Attributes {
 			if strings.HasPrefix(k, v) {
@@ -109,7 +111,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	fooFields := logFields
 	fooFields["diff"] = diff.Attributes
 	logrus.WithFields(logFields).Info("Applying changes")
-	state2, diags := rp.Apply(ctx, state1, diff, p.Meta())
+	_, diags = rp.Apply(ctx, state1, diff, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -118,32 +120,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		}
 	}
 
-	// Diff
-	logrus.WithFields(logFields).Info("Diffing state and config")
-	diff, err = rp.Diff(ctx, state2, rc, p.Meta())
-	if err != nil {
-		return err
-	}
+	// TODO: Implement a stateKeeper interface with read and write method signatures.
+	// Call the provided write method after rp.Apply
 
-	if diff == nil {
-		logrus.WithFields(logFields).Info("All good")
-		return nil
-	}
-
-	// Remove the fields we are ignoring
-	for _, v := range importStateIgnore[h.ResourceType] {
-		for k := range diff.Attributes {
-			if strings.HasPrefix(k, v) {
-				delete(diff.Attributes, k)
-			}
-		}
-	}
-
-	if len(diff.Attributes) == 0 {
-		logrus.WithFields(logFields).Info("All good")
-		return nil
-	}
-
-	// Return
-	return fmt.Errorf("error state is divergent")
+	return nil
 }
