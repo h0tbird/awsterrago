@@ -1,8 +1,8 @@
 package main
 
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Imports
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 import (
 
@@ -22,23 +22,40 @@ import (
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 )
 
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// State implementation
+//-----------------------------------------------------------------------------
+
+type state struct{}
+
+func (s *state) Read(logicalID string) (*terraform.InstanceState, error) {
+	// TODO: Implement this function
+	return nil, nil
+}
+
+func (s *state) Write(logicalID string, state *terraform.InstanceState) error {
+	// TODO: Implement this function
+	return nil
+}
+
+//-----------------------------------------------------------------------------
 // Init
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 func init() {
 	// TODO: replace logrus with zap logger
 	log.SetOutput(ioutil.Discard)
 }
 
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Main
-//----------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 func main() {
 
 	ctx := context.Background()
 	var wg sync.WaitGroup
+	s := &state{}
 
 	//------------------------
 	// Configure the provider
@@ -60,10 +77,14 @@ func main() {
 		}
 	}
 
+	//----------------------------------------------------------------------
 	// AWS::IAM::ManagedPolicy | nodes.cluster-api-provider-aws.sigs.k8s.io
+	//----------------------------------------------------------------------
+
 	nodesPolicy := &resource.Handler{
-		ResourceID:   "arn:aws:iam::729179300383:policy/nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceType: "aws_iam_policy",
+		ResourcePhysicalID: "arn:aws:iam::729179300383:policy/nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceLogicalID:  "NodesPolicy",
+		ResourceType:       "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
 			"name":        "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"description": "For the Kubernetes Cloud Provider AWS nodes",
@@ -116,14 +137,18 @@ func main() {
 		},
 	}
 
-	if err := nodesPolicy.Reconcile(ctx, p); err != nil {
+	if err := nodesPolicy.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
+	//-------------------------------------------------------------
 	// AWS::IAM::Role | nodes.cluster-api-provider-aws.sigs.k8s.io
+	//-------------------------------------------------------------
+
 	nodesRole := &resource.Handler{
-		ResourceID:   "nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceType: "aws_iam_role",
+		ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceLogicalID:  "NodesRole",
+		ResourceType:       "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"assume_role_policy": `{
@@ -141,7 +166,7 @@ func main() {
 		},
 	}
 
-	if err := nodesRole.Reconcile(ctx, p); err != nil {
+	if err := nodesRole.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -160,8 +185,9 @@ func main() {
 	//-------------------------
 
 	myNiceBucket := &resource.Handler{
-		ResourceID:   "my-nice-bucket",
-		ResourceType: "aws_s3_bucket",
+		ResourcePhysicalID: "my-nice-bucket",
+		ResourceLogicalID:  "MyNiceBucket",
+		ResourceType:       "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-nice-bucket",
 		},
@@ -170,7 +196,7 @@ func main() {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		if err := myNiceBucket.Reconcile(ctx, p); err != nil {
+		if err := myNiceBucket.Reconcile(ctx, p, s); err != nil {
 			logrus.Fatal(err)
 		}
 	}(&wg)
@@ -180,8 +206,9 @@ func main() {
 	//--------------------------
 
 	myUglyBucket := &resource.Handler{
-		ResourceID:   "my-ugly-bucket",
-		ResourceType: "aws_s3_bucket",
+		ResourcePhysicalID: "my-ugly-bucket",
+		ResourceLogicalID:  "MyUglyBucket",
+		ResourceType:       "aws_s3_bucket",
 		ResourceConfig: map[string]interface{}{
 			"bucket": "my-ugly-bucket",
 		},
@@ -190,7 +217,7 @@ func main() {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		if err := myUglyBucket.Reconcile(ctx, p); err != nil {
+		if err := myUglyBucket.Reconcile(ctx, p, s); err != nil {
 			logrus.Fatal(err)
 		}
 	}(&wg)

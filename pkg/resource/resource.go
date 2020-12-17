@@ -33,13 +33,19 @@ var importStateIgnore = map[string][]string{
 // Types
 //-----------------------------------------------------------------------------
 
+// State ...
+type State interface {
+	Read(string) (*terraform.InstanceState, error)
+	Write(string, *terraform.InstanceState) error
+}
+
 // Handler ...
 type Handler struct {
-	ResourceID        string
-	ResourceType      string
-	ImportStateIgnore []string
-	ResourceConfig    map[string]interface{}
-	InstanceState     *terraform.InstanceState
+	ResourcePhysicalID string
+	ResourceLogicalID  string
+	ResourceType       string
+	ImportStateIgnore  []string
+	ResourceConfig     map[string]interface{}
 }
 
 //-----------------------------------------------------------------------------
@@ -47,11 +53,11 @@ type Handler struct {
 //-----------------------------------------------------------------------------
 
 // Reconcile ...
-func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
+func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) error {
 
 	// Fixed log fields
 	logFields := logrus.Fields{
-		"id":   h.ResourceID,
+		"id":   h.ResourcePhysicalID,
 		"type": h.ResourceType,
 	}
 
@@ -61,17 +67,22 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		Config: h.ResourceConfig,
 	}
 
-	// TODO: Implement a stateKeeper interface with read and write method signatures.
-	// Call the provided read method and default to empty state if none is available.
-	if h.InstanceState == nil {
-		h.InstanceState = &terraform.InstanceState{
-			ID: h.ResourceID,
+	// Read the stored state
+	state0, err := s.Read(h.ResourceLogicalID)
+	if err != nil {
+		return err
+	}
+
+	// Default to empty state
+	if state0 == nil {
+		state0 = &terraform.InstanceState{
+			ID: h.ResourcePhysicalID,
 		}
 	}
 
-	// Refresh
+	// Refresh the state
 	logrus.WithFields(logFields).Info("Refreshing the state")
-	state1, diags := rp.RefreshWithoutUpgrade(ctx, h.InstanceState, p.Meta())
+	state1, diags := rp.RefreshWithoutUpgrade(ctx, state0, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -111,7 +122,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 	fooFields := logFields
 	fooFields["diff"] = diff.Attributes
 	logrus.WithFields(logFields).Info("Applying changes")
-	_, diags = rp.Apply(ctx, state1, diff, p.Meta())
+	state2, diags := rp.Apply(ctx, state1, diff, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -120,8 +131,10 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider) error {
 		}
 	}
 
-	// TODO: Implement a stateKeeper interface with read and write method signatures.
-	// Call the provided write method after rp.Apply
+	// Write the state
+	if err := s.Write(h.ResourceLogicalID, state2); err != nil {
+		return err
+	}
 
 	return nil
 }
