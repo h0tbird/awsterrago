@@ -23,6 +23,72 @@ import (
 )
 
 //-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+
+const (
+	nodesPolicy = `{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Action": [
+				"ec2:DescribeInstances",
+				"ec2:DescribeRegions",
+				"ecr:GetAuthorizationToken",
+				"ecr:BatchCheckLayerAvailability",
+				"ecr:GetDownloadUrlForLayer",
+				"ecr:GetRepositoryPolicy",
+				"ecr:DescribeRepositories",
+				"ecr:ListImages",
+				"ecr:BatchGetImage"
+			],
+			"Resource": [
+				"*"
+			],
+			"Effect": "Allow"
+		},
+		{
+			"Action": [
+				"secretsmanager:DeleteSecret",
+				"secretsmanager:GetSecretValue"
+			],
+			"Resource": [
+				"arn:*:secretsmanager:*:*:secret:aws.cluster.x-k8s.io/*"
+			],
+			"Effect": "Allow"
+		},
+		{
+			"Action": [
+				"ssm:UpdateInstanceInformation",
+				"ssmmessages:CreateControlChannel",
+				"ssmmessages:CreateDataChannel",
+				"ssmmessages:OpenControlChannel",
+				"ssmmessages:OpenDataChannel",
+				"s3:GetEncryptionConfiguration"
+			],
+			"Resource": [
+				"*"
+			],
+			"Effect": "Allow"
+		}
+	]
+}`
+
+	assumeRolePolicy = `{
+	"Version": "2012-10-17",
+	"Statement": [
+	  {
+		"Effect": "Allow",
+		"Principal": {
+		  "Service": "ec2.amazonaws.com"
+		},
+		"Action": "sts:AssumeRole"
+	  }
+	]
+}`
+)
+
+//-----------------------------------------------------------------------------
 // State implementation
 //-----------------------------------------------------------------------------
 
@@ -88,52 +154,7 @@ func main() {
 		ResourceConfig: map[string]interface{}{
 			"name":        "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"description": "For the Kubernetes Cloud Provider AWS nodes",
-			"policy": `{
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Action": [
-							"ec2:DescribeInstances",
-							"ec2:DescribeRegions",
-							"ecr:GetAuthorizationToken",
-							"ecr:BatchCheckLayerAvailability",
-							"ecr:GetDownloadUrlForLayer",
-							"ecr:GetRepositoryPolicy",
-							"ecr:DescribeRepositories",
-							"ecr:ListImages",
-							"ecr:BatchGetImage"
-						],
-						"Resource": [
-							"*"
-						],
-						"Effect": "Allow"
-					},
-					{
-						"Action": [
-							"secretsmanager:DeleteSecret",
-							"secretsmanager:GetSecretValue"
-						],
-						"Resource": [
-							"arn:*:secretsmanager:*:*:secret:aws.cluster.x-k8s.io/*"
-						],
-						"Effect": "Allow"
-					},
-					{
-						"Action": [
-							"ssm:UpdateInstanceInformation",
-							"ssmmessages:CreateControlChannel",
-							"ssmmessages:CreateDataChannel",
-							"ssmmessages:OpenControlChannel",
-							"ssmmessages:OpenDataChannel",
-							"s3:GetEncryptionConfiguration"
-						],
-						"Resource": [
-							"*"
-						],
-						"Effect": "Allow"
-					}
-				]
-			}`,
+			"policy":      nodesPolicy,
 		},
 	}
 
@@ -150,19 +171,8 @@ func main() {
 		ResourceLogicalID:  "NodesRole",
 		ResourceType:       "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
-			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
-			"assume_role_policy": `{
-				"Version": "2012-10-17",
-				"Statement": [
-				  {
-					"Effect": "Allow",
-					"Principal": {
-					  "Service": "ec2.amazonaws.com"
-					},
-					"Action": "sts:AssumeRole"
-				  }
-				]
-			  }`,
+			"name":               "nodes.cluster-api-provider-aws.sigs.k8s.io",
+			"assume_role_policy": assumeRolePolicy,
 		},
 	}
 
@@ -170,7 +180,23 @@ func main() {
 		logrus.Fatal(err)
 	}
 
+	//------------------------------------------------------------------------
 	// AWS::IAM::InstanceProfile | nodes.cluster-api-provider-aws.sigs.k8s.io
+	//------------------------------------------------------------------------
+
+	nodesInstanceProfile := &resource.Handler{
+		ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceLogicalID:  "NodesInstanceProfile",
+		ResourceType:       "aws_iam_instance_profile",
+		ResourceConfig: map[string]interface{}{
+			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
+			"role": nodesRole.ResourceConfig["name"],
+		},
+	}
+
+	if err := nodesInstanceProfile.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
 
 	// AWS::IAM::ManagedPolicy   | control-plane.cluster-api-provider-aws.sigs.k8s.io
 	// AWS::IAM::Role            | control-plane.cluster-api-provider-aws.sigs.k8s.io
