@@ -10,7 +10,6 @@ import (
 	"context"
 	"io/ioutil"
 	"log"
-	"sync"
 
 	// community
 	"github.com/h0tbird/awsterrago/pkg/resource"
@@ -120,7 +119,6 @@ func init() {
 func main() {
 
 	ctx := context.Background()
-	var wg sync.WaitGroup
 	s := &state{}
 
 	//------------------------
@@ -205,52 +203,4 @@ func main() {
 	// AWS::IAM::ManagedPolicy   | controllers.cluster-api-provider-aws.sigs.k8s.io
 	// AWS::IAM::Role            | controllers.cluster-api-provider-aws.sigs.k8s.io
 	// AWS::IAM::InstanceProfile | controllers.cluster-api-provider-aws.sigs.k8s.io
-
-	//-------------------------
-	// Create a nice S3 bucket
-	//-------------------------
-
-	myNiceBucket := &resource.Handler{
-		ResourcePhysicalID: "my-nice-bucket",
-		ResourceLogicalID:  "MyNiceBucket",
-		ResourceType:       "aws_s3_bucket",
-		ResourceConfig: map[string]interface{}{
-			"bucket": "my-nice-bucket",
-		},
-	}
-
-	wg.Add(1)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		if err := myNiceBucket.Reconcile(ctx, p, s); err != nil {
-			logrus.Fatal(err)
-		}
-	}(&wg)
-
-	//--------------------------
-	// Create an ugly S3 bucket
-	//--------------------------
-
-	myUglyBucket := &resource.Handler{
-		ResourcePhysicalID: "my-ugly-bucket",
-		ResourceLogicalID:  "MyUglyBucket",
-		ResourceType:       "aws_s3_bucket",
-		ResourceConfig: map[string]interface{}{
-			"bucket": "my-ugly-bucket",
-		},
-	}
-
-	wg.Add(1)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		if err := myUglyBucket.Reconcile(ctx, p, s); err != nil {
-			logrus.Fatal(err)
-		}
-	}(&wg)
-
-	//------------------
-	// Block until done
-	//------------------
-
-	wg.Wait()
 }
