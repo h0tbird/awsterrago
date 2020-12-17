@@ -180,7 +180,23 @@ func main() {
 		logrus.Fatal(err)
 	}
 
+	//------------------------------------------------------------------------
 	// AWS::IAM::InstanceProfile | nodes.cluster-api-provider-aws.sigs.k8s.io
+	//------------------------------------------------------------------------
+
+	nodesInstanceProfile := &resource.Handler{
+		ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
+		ResourceLogicalID:  "NodesInstanceProfile",
+		ResourceType:       "aws_iam_instance_profile",
+		ResourceConfig: map[string]interface{}{
+			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
+			"role": nodesRole.ResourceConfig["name"],
+		},
+	}
+
+	if err := nodesInstanceProfile.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
 
 	// AWS::IAM::ManagedPolicy   | control-plane.cluster-api-provider-aws.sigs.k8s.io
 	// AWS::IAM::Role            | control-plane.cluster-api-provider-aws.sigs.k8s.io

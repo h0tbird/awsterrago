@@ -57,7 +57,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 
 	// Fixed log fields
 	logFields := logrus.Fields{
-		"id":   h.ResourcePhysicalID,
+		"id":   h.ResourceLogicalID,
 		"type": h.ResourceType,
 	}
 
