@@ -98,13 +98,13 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 		return err
 	}
 
+	// Return if there is nothing to sync
 	if diff == nil {
 		logrus.WithFields(logFields).Info("All good")
 		return nil
 	}
 
-	// Remove the fields we are ignoring
-	// TODO: log a list of updated attributes
+	// Remove all ignored attributes
 	for _, v := range importStateIgnore[h.ResourceType] {
 		for k := range diff.Attributes {
 			if strings.HasPrefix(k, v) {
@@ -113,14 +113,19 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 		}
 	}
 
+	// Return if there is nothing to sync
 	if len(diff.Attributes) == 0 {
 		logrus.WithFields(logFields).Info("All good")
 		return nil
 	}
 
+	// Add out-of-sync attributes to the log
+	logFields["diff"] = []string{}
+	for k := range diff.Attributes {
+		logFields["diff"] = append(logFields["diff"].([]string), k)
+	}
+
 	// Apply
-	fooFields := logFields
-	fooFields["diff"] = diff.Attributes
 	logrus.WithFields(logFields).Info("Applying changes")
 	state2, diags := rp.Apply(ctx, state1, diff, p.Meta())
 	if diags != nil && diags.HasError() {
