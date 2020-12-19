@@ -42,5 +42,6 @@ require (
 	golang.org/x/tools v0.0.0-20201121010211-780cb80bd7fb // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4 // indirect
+	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/client-go v11.0.0+incompatible // indirect
 )

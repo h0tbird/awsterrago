@@ -7,10 +7,13 @@ package main
 import (
 
 	// stdlib
+	"bytes"
 	"context"
-	"fmt"
+	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 
 	// community
 	"github.com/h0tbird/awsterrago/pkg/resource"
@@ -94,15 +97,42 @@ const (
 
 type state struct{}
 
-func (s *state) Read(logicalID string) (*terraform.InstanceState, error) {
-	// TODO: Implement this function
-	return nil, nil
+func (s *state) Read(logicalID string, state interface{}) error {
+
+	// Open a file handler
+	f, err := os.Open("/tmp/" + logicalID + ".json")
+	if err != nil {
+
+		// No file means no state
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	defer f.Close()
+
+	// Unmarshal json
+	return json.NewDecoder(f).Decode(state)
 }
 
-func (s *state) Write(logicalID string, state *terraform.InstanceState) error {
-	// TODO: Implement this function
-	fmt.Printf("\n%v\n", state)
-	return nil
+func (s *state) Write(logicalID string, state interface{}) error {
+
+	// Open a file handler
+	f, err := os.Create("/tmp/" + logicalID + ".json")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Marshal json
+	jsonBytes, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Write to disk
+	_, err = io.Copy(f, bytes.NewReader(jsonBytes))
+	return err
 }
 
 //-----------------------------------------------------------------------------
@@ -148,9 +178,8 @@ func main() {
 	//---------------------------------------------------------------
 
 	nodesPolicy := &resource.Handler{
-		ResourcePhysicalID: "arn:aws:iam::729179300383:policy/nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceLogicalID:  "NodesPolicy",
-		ResourceType:       "aws_iam_policy",
+		ResourceLogicalID: "NodesPolicy",
+		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
 			"name":        "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"description": "For the Kubernetes Cloud Provider AWS nodes",
@@ -167,9 +196,8 @@ func main() {
 	//-------------------------------------------------------------
 
 	nodesRole := &resource.Handler{
-		ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceLogicalID:  "NodesRole",
-		ResourceType:       "aws_iam_role",
+		ResourceLogicalID: "NodesRole",
+		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
 			"name":               "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"assume_role_policy": assumeRolePolicy,
@@ -185,12 +213,11 @@ func main() {
 	//-----------------------------------------------------------------------------
 
 	nodesRolePolicyAttachment := &resource.Handler{
-		//ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io-20201219183256855300000001",
 		ResourceLogicalID: "NodesRolePolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       nodesRole.ResourceConfig["name"],
-			"policy_arn": nodesPolicy.ResourcePhysicalID,
+			"policy_arn": nodesPolicy.ResourceState.ID,
 		},
 	}
 
@@ -203,9 +230,8 @@ func main() {
 	//------------------------------------------------------------------------
 
 	nodesInstanceProfile := &resource.Handler{
-		ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io",
-		ResourceLogicalID:  "NodesInstanceProfile",
-		ResourceType:       "aws_iam_instance_profile",
+		ResourceLogicalID: "NodesInstanceProfile",
+		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
 			"role": nodesRole.ResourceConfig["name"],

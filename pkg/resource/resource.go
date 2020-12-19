@@ -35,17 +35,16 @@ var importStateIgnore = map[string][]string{
 
 // State ...
 type State interface {
-	Read(string) (*terraform.InstanceState, error)
-	Write(string, *terraform.InstanceState) error
+	Read(string, interface{}) error
+	Write(string, interface{}) error
 }
 
 // Handler ...
 type Handler struct {
-	ResourcePhysicalID string
-	ResourceLogicalID  string
-	ResourceType       string
-	ImportStateIgnore  []string
-	ResourceConfig     map[string]interface{}
+	ResourceLogicalID string
+	ResourceType      string
+	ResourceConfig    map[string]interface{}
+	ResourceState     *terraform.InstanceState
 }
 
 //-----------------------------------------------------------------------------
@@ -68,21 +67,14 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 	}
 
 	// Read the stored state
-	state0, err := s.Read(h.ResourceLogicalID)
-	if err != nil {
+	h.ResourceState = &terraform.InstanceState{}
+	if err := s.Read(h.ResourceLogicalID, h.ResourceState); err != nil {
 		return err
-	}
-
-	// Default to empty state
-	if state0 == nil {
-		state0 = &terraform.InstanceState{
-			ID: h.ResourcePhysicalID,
-		}
 	}
 
 	// Refresh the state
 	logrus.WithFields(logFields).Info("Refreshing the state")
-	state1, diags := rp.RefreshWithoutUpgrade(ctx, state0, p.Meta())
+	state, diags := rp.RefreshWithoutUpgrade(ctx, h.ResourceState, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -93,7 +85,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 
 	// Diff
 	logrus.WithFields(logFields).Info("Diffing state and config")
-	diff, err := rp.Diff(ctx, state1, rc, p.Meta())
+	diff, err := rp.Diff(ctx, state, rc, p.Meta())
 	if err != nil {
 		return err
 	}
@@ -127,7 +119,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 
 	// Apply the changes
 	logrus.WithFields(logFields).Info("Applying changes")
-	state2, diags := rp.Apply(ctx, state1, diff, p.Meta())
+	state, diags = rp.Apply(ctx, state, diff, p.Meta())
 	if diags != nil && diags.HasError() {
 		for _, d := range diags {
 			if d.Severity == diag.Error {
@@ -137,7 +129,8 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 	}
 
 	// Write the state
-	if err := s.Write(h.ResourceLogicalID, state2); err != nil {
+	h.ResourceState = state
+	if err := s.Write(h.ResourceLogicalID, state); err != nil {
 		return err
 	}
 
