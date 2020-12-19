@@ -125,7 +125,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 		logFields["diff"] = append(logFields["diff"].([]string), k)
 	}
 
-	// Apply
+	// Apply the changes
 	logrus.WithFields(logFields).Info("Applying changes")
 	state2, diags := rp.Apply(ctx, state1, diff, p.Meta())
 	if diags != nil && diags.HasError() {

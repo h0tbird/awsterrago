@@ -8,6 +8,7 @@ import (
 
 	// stdlib
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -100,6 +101,7 @@ func (s *state) Read(logicalID string) (*terraform.InstanceState, error) {
 
 func (s *state) Write(logicalID string, state *terraform.InstanceState) error {
 	// TODO: Implement this function
+	fmt.Printf("\n%v\n", state)
 	return nil
 }
 
@@ -141,9 +143,9 @@ func main() {
 		}
 	}
 
-	//----------------------------------------------------------------------
-	// AWS::IAM::ManagedPolicy | nodes.cluster-api-provider-aws.sigs.k8s.io
-	//----------------------------------------------------------------------
+	//---------------------------------------------------------------
+	// AWS::IAM::Policy | nodes.cluster-api-provider-aws.sigs.k8s.io
+	//---------------------------------------------------------------
 
 	nodesPolicy := &resource.Handler{
 		ResourcePhysicalID: "arn:aws:iam::729179300383:policy/nodes.cluster-api-provider-aws.sigs.k8s.io",
@@ -175,6 +177,24 @@ func main() {
 	}
 
 	if err := nodesRole.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	//-----------------------------------------------------------------------------
+	// AWS::IAM::RolePolicyAttachment | nodes.cluster-api-provider-aws.sigs.k8s.io
+	//-----------------------------------------------------------------------------
+
+	nodesRolePolicyAttachment := &resource.Handler{
+		//ResourcePhysicalID: "nodes.cluster-api-provider-aws.sigs.k8s.io-20201219183256855300000001",
+		ResourceLogicalID: "NodesRolePolicyAttachment",
+		ResourceType:      "aws_iam_role_policy_attachment",
+		ResourceConfig: map[string]interface{}{
+			"role":       nodesRole.ResourceConfig["name"],
+			"policy_arn": nodesPolicy.ResourcePhysicalID,
+		},
+	}
+
+	if err := nodesRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
