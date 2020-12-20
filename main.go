@@ -31,51 +31,51 @@ import (
 
 const (
 	nodesPolicy = `{
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Action": [
-				"ec2:DescribeInstances",
-				"ec2:DescribeRegions",
-				"ecr:GetAuthorizationToken",
-				"ecr:BatchCheckLayerAvailability",
-				"ecr:GetDownloadUrlForLayer",
-				"ecr:GetRepositoryPolicy",
-				"ecr:DescribeRepositories",
-				"ecr:ListImages",
-				"ecr:BatchGetImage"
-			],
-			"Resource": [
-				"*"
-			],
-			"Effect": "Allow"
-		},
-		{
-			"Action": [
-				"secretsmanager:DeleteSecret",
-				"secretsmanager:GetSecretValue"
-			],
-			"Resource": [
-				"arn:*:secretsmanager:*:*:secret:aws.cluster.x-k8s.io/*"
-			],
-			"Effect": "Allow"
-		},
-		{
-			"Action": [
-				"ssm:UpdateInstanceInformation",
-				"ssmmessages:CreateControlChannel",
-				"ssmmessages:CreateDataChannel",
-				"ssmmessages:OpenControlChannel",
-				"ssmmessages:OpenDataChannel",
-				"s3:GetEncryptionConfiguration"
-			],
-			"Resource": [
-				"*"
-			],
-			"Effect": "Allow"
-		}
-	]
-}`
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Action": [
+					"ec2:DescribeInstances",
+					"ec2:DescribeRegions",
+					"ecr:GetAuthorizationToken",
+					"ecr:BatchCheckLayerAvailability",
+					"ecr:GetDownloadUrlForLayer",
+					"ecr:GetRepositoryPolicy",
+					"ecr:DescribeRepositories",
+					"ecr:ListImages",
+					"ecr:BatchGetImage"
+				],
+				"Resource": [
+					"*"
+				],
+				"Effect": "Allow"
+			},
+			{
+				"Action": [
+					"secretsmanager:DeleteSecret",
+					"secretsmanager:GetSecretValue"
+				],
+				"Resource": [
+					"arn:*:secretsmanager:*:*:secret:aws.cluster.x-k8s.io/*"
+				],
+				"Effect": "Allow"
+			},
+			{
+				"Action": [
+					"ssm:UpdateInstanceInformation",
+					"ssmmessages:CreateControlChannel",
+					"ssmmessages:CreateDataChannel",
+					"ssmmessages:OpenControlChannel",
+					"ssmmessages:OpenDataChannel",
+					"s3:GetEncryptionConfiguration"
+				],
+				"Resource": [
+					"*"
+				],
+				"Effect": "Allow"
+			}
+		]
+	}`
 
 	controlPlanePolicy = `{
 		"Version": "2012-10-17",
@@ -147,17 +147,17 @@ const (
 	}`
 
 	assumeRolePolicy = `{
-	"Version": "2012-10-17",
-	"Statement": [
-	  {
-		"Effect": "Allow",
-		"Principal": {
-		  "Service": "ec2.amazonaws.com"
-		},
-		"Action": "sts:AssumeRole"
-	  }
-	]
-}`
+		"Version": "2012-10-17",
+		"Statement": [
+		{
+			"Effect": "Allow",
+			"Principal": {
+			"Service": "ec2.amazonaws.com"
+			},
+			"Action": "sts:AssumeRole"
+		}
+		]
+	}`
 )
 
 //-----------------------------------------------------------------------------
