@@ -77,6 +77,75 @@ const (
 	]
 }`
 
+	controlPlanePolicy = `{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Action": [
+					"autoscaling:DescribeAutoScalingGroups",
+					"autoscaling:DescribeLaunchConfigurations",
+					"autoscaling:DescribeTags",
+					"ec2:DescribeInstances",
+					"ec2:DescribeImages",
+					"ec2:DescribeRegions",
+					"ec2:DescribeRouteTables",
+					"ec2:DescribeSecurityGroups",
+					"ec2:DescribeSubnets",
+					"ec2:DescribeVolumes",
+					"ec2:CreateSecurityGroup",
+					"ec2:CreateTags",
+					"ec2:CreateVolume",
+					"ec2:ModifyInstanceAttribute",
+					"ec2:ModifyVolume",
+					"ec2:AttachVolume",
+					"ec2:AuthorizeSecurityGroupIngress",
+					"ec2:CreateRoute",
+					"ec2:DeleteRoute",
+					"ec2:DeleteSecurityGroup",
+					"ec2:DeleteVolume",
+					"ec2:DetachVolume",
+					"ec2:RevokeSecurityGroupIngress",
+					"ec2:DescribeVpcs",
+					"elasticloadbalancing:AddTags",
+					"elasticloadbalancing:AttachLoadBalancerToSubnets",
+					"elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
+					"elasticloadbalancing:CreateLoadBalancer",
+					"elasticloadbalancing:CreateLoadBalancerPolicy",
+					"elasticloadbalancing:CreateLoadBalancerListeners",
+					"elasticloadbalancing:ConfigureHealthCheck",
+					"elasticloadbalancing:DeleteLoadBalancer",
+					"elasticloadbalancing:DeleteLoadBalancerListeners",
+					"elasticloadbalancing:DescribeLoadBalancers",
+					"elasticloadbalancing:DescribeLoadBalancerAttributes",
+					"elasticloadbalancing:DetachLoadBalancerFromSubnets",
+					"elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+					"elasticloadbalancing:ModifyLoadBalancerAttributes",
+					"elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+					"elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
+					"elasticloadbalancing:AddTags",
+					"elasticloadbalancing:CreateListener",
+					"elasticloadbalancing:CreateTargetGroup",
+					"elasticloadbalancing:DeleteListener",
+					"elasticloadbalancing:DeleteTargetGroup",
+					"elasticloadbalancing:DescribeListeners",
+					"elasticloadbalancing:DescribeLoadBalancerPolicies",
+					"elasticloadbalancing:DescribeTargetGroups",
+					"elasticloadbalancing:DescribeTargetHealth",
+					"elasticloadbalancing:ModifyListener",
+					"elasticloadbalancing:ModifyTargetGroup",
+					"elasticloadbalancing:RegisterTargets",
+					"elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
+					"iam:CreateServiceLinkedRole",
+					"kms:DescribeKey"
+				],
+				"Resource": [
+					"*"
+				],
+				"Effect": "Allow"
+			}
+		]
+	}`
+
 	assumeRolePolicy = `{
 	"Version": "2012-10-17",
 	"Statement": [
@@ -173,10 +242,11 @@ func main() {
 		}
 	}
 
-	//---------------------------------------------------------------
-	// AWS::IAM::Policy | nodes.cluster-api-provider-aws.sigs.k8s.io
-	//---------------------------------------------------------------
+	//--------------------------------------------
+	// nodes.cluster-api-provider-aws.sigs.k8s.io
+	//--------------------------------------------
 
+	// AWS::IAM::Policy
 	nodesPolicy := &resource.Handler{
 		ResourceLogicalID: "NodesPolicy",
 		ResourceType:      "aws_iam_policy",
@@ -191,10 +261,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	//-------------------------------------------------------------
-	// AWS::IAM::Role | nodes.cluster-api-provider-aws.sigs.k8s.io
-	//-------------------------------------------------------------
-
+	// AWS::IAM::Role
 	nodesRole := &resource.Handler{
 		ResourceLogicalID: "NodesRole",
 		ResourceType:      "aws_iam_role",
@@ -208,10 +275,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	//-----------------------------------------------------------------------------
-	// AWS::IAM::RolePolicyAttachment | nodes.cluster-api-provider-aws.sigs.k8s.io
-	//-----------------------------------------------------------------------------
-
+	// AWS::IAM::RolePolicyAttachment
 	nodesRolePolicyAttachment := &resource.Handler{
 		ResourceLogicalID: "NodesRolePolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
@@ -225,10 +289,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	//------------------------------------------------------------------------
-	// AWS::IAM::InstanceProfile | nodes.cluster-api-provider-aws.sigs.k8s.io
-	//------------------------------------------------------------------------
-
+	// AWS::IAM::InstanceProfile
 	nodesInstanceProfile := &resource.Handler{
 		ResourceLogicalID: "NodesInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
@@ -242,11 +303,71 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	// AWS::IAM::ManagedPolicy   | control-plane.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::Role            | control-plane.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::InstanceProfile | control-plane.cluster-api-provider-aws.sigs.k8s.io
+	//-----------------------------------------------------------------------------------
+	// AWS::IAM::Policy               | controllers.cluster-api-provider-aws.sigs.k8s.io
+	// AWS::IAM::Role                 | controllers.cluster-api-provider-aws.sigs.k8s.io
+	// AWS::IAM::RolePolicyAttachment | controllers.cluster-api-provider-aws.sigs.k8s.io
+	// AWS::IAM::InstanceProfile      | controllers.cluster-api-provider-aws.sigs.k8s.io
+	//-----------------------------------------------------------------------------------
 
-	// AWS::IAM::ManagedPolicy   | controllers.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::Role            | controllers.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::InstanceProfile | controllers.cluster-api-provider-aws.sigs.k8s.io
+	//----------------------------------------------------
+	// control-plane.cluster-api-provider-aws.sigs.k8s.io
+	//----------------------------------------------------
+
+	// AWS::IAM::Policy
+	controlPlanePolicy := &resource.Handler{
+		ResourceLogicalID: "ControlPlanePolicy",
+		ResourceType:      "aws_iam_policy",
+		ResourceConfig: map[string]interface{}{
+			"name":        "control-plane.cluster-api-provider-aws.sigs.k8s.io",
+			"description": "For the Kubernetes Cloud Provider AWS Control Plane",
+			"policy":      controlPlanePolicy,
+		},
+	}
+
+	if err := controlPlanePolicy.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::Role
+	controlPlaneRole := &resource.Handler{
+		ResourceLogicalID: "ControlPlaneRole",
+		ResourceType:      "aws_iam_role",
+		ResourceConfig: map[string]interface{}{
+			"name":               "control-plane.cluster-api-provider-aws.sigs.k8s.io",
+			"assume_role_policy": assumeRolePolicy,
+		},
+	}
+
+	if err := controlPlaneRole.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::RolePolicyAttachment
+	controlPlaneRolePolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "ControlPlaneRolePolicyAttachment",
+		ResourceType:      "aws_iam_role_policy_attachment",
+		ResourceConfig: map[string]interface{}{
+			"role":       controlPlaneRole.ResourceConfig["name"],
+			"policy_arn": controlPlanePolicy.ResourceState.ID,
+		},
+	}
+
+	if err := controlPlaneRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::InstanceProfile
+	controlPlaneInstanceProfile := &resource.Handler{
+		ResourceLogicalID: "ControlPlaneInstanceProfile",
+		ResourceType:      "aws_iam_instance_profile",
+		ResourceConfig: map[string]interface{}{
+			"name": "control-plane.cluster-api-provider-aws.sigs.k8s.io",
+			"role": controlPlaneRole.ResourceConfig["name"],
+		},
+	}
+
+	if err := controlPlaneInstanceProfile.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
 }
