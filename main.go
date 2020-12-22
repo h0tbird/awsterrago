@@ -395,8 +395,8 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	nodesRolePolicyAttachment := &resource.Handler{
-		ResourceLogicalID: "NodesRolePolicyAttachment",
+	nodesRoleToNodesPolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "NodesRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       nodesRole.ResourceConfig["name"],
@@ -404,7 +404,7 @@ func main() {
 		},
 	}
 
-	if err := nodesRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	if err := nodesRoleToNodesPolicyAttachment.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -456,8 +456,8 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	controllersRolePolicyAttachment := &resource.Handler{
-		ResourceLogicalID: "ControllersRolePolicyAttachment",
+	controllersRoleToControllersPolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "ControllersRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       controllersRole.ResourceConfig["name"],
@@ -465,7 +465,7 @@ func main() {
 		},
 	}
 
-	if err := controllersRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	if err := controllersRoleToControllersPolicyAttachment.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -517,8 +517,8 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	controlPlaneRolePolicyAttachment := &resource.Handler{
-		ResourceLogicalID: "ControlPlaneRolePolicyAttachment",
+	controlPlaneRoleToControlPlanePolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "ControlPlaneRoleToControlPlanePolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       controlPlaneRole.ResourceConfig["name"],
@@ -526,7 +526,7 @@ func main() {
 		},
 	}
 
-	if err := controlPlaneRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	if err := controlPlaneRoleToControlPlanePolicyAttachment.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
