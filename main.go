@@ -77,6 +77,125 @@ const (
 		]
 	}`
 
+	controllersPolicy = `{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Action": [
+					"ec2:AllocateAddress",
+					"ec2:AssociateRouteTable",
+					"ec2:AttachInternetGateway",
+					"ec2:AuthorizeSecurityGroupIngress",
+					"ec2:CreateInternetGateway",
+					"ec2:CreateNatGateway",
+					"ec2:CreateRoute",
+					"ec2:CreateRouteTable",
+					"ec2:CreateSecurityGroup",
+					"ec2:CreateSubnet",
+					"ec2:CreateTags",
+					"ec2:CreateVpc",
+					"ec2:ModifyVpcAttribute",
+					"ec2:DeleteInternetGateway",
+					"ec2:DeleteNatGateway",
+					"ec2:DeleteRouteTable",
+					"ec2:DeleteSecurityGroup",
+					"ec2:DeleteSubnet",
+					"ec2:DeleteTags",
+					"ec2:DeleteVpc",
+					"ec2:DescribeAccountAttributes",
+					"ec2:DescribeAddresses",
+					"ec2:DescribeAvailabilityZones",
+					"ec2:DescribeInstances",
+					"ec2:DescribeInternetGateways",
+					"ec2:DescribeImages",
+					"ec2:DescribeNatGateways",
+					"ec2:DescribeNetworkInterfaces",
+					"ec2:DescribeNetworkInterfaceAttribute",
+					"ec2:DescribeRouteTables",
+					"ec2:DescribeSecurityGroups",
+					"ec2:DescribeSubnets",
+					"ec2:DescribeVpcs",
+					"ec2:DescribeVpcAttribute",
+					"ec2:DescribeVolumes",
+					"ec2:DetachInternetGateway",
+					"ec2:DisassociateRouteTable",
+					"ec2:DisassociateAddress",
+					"ec2:ModifyInstanceAttribute",
+					"ec2:ModifyNetworkInterfaceAttribute",
+					"ec2:ModifySubnetAttribute",
+					"ec2:ReleaseAddress",
+					"ec2:RevokeSecurityGroupIngress",
+					"ec2:RunInstances",
+					"ec2:TerminateInstances",
+					"tag:GetResources",
+					"elasticloadbalancing:AddTags",
+					"elasticloadbalancing:CreateLoadBalancer",
+					"elasticloadbalancing:ConfigureHealthCheck",
+					"elasticloadbalancing:DeleteLoadBalancer",
+					"elasticloadbalancing:DescribeLoadBalancers",
+					"elasticloadbalancing:DescribeLoadBalancerAttributes",
+					"elasticloadbalancing:DescribeTags",
+					"elasticloadbalancing:ModifyLoadBalancerAttributes",
+					"elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+					"elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+					"elasticloadbalancing:RemoveTags"
+				],
+				"Resource": [
+					"*"
+				],
+				"Effect": "Allow"
+			},
+			{
+				"Condition": {
+					"StringLike": {
+						"iam:AWSServiceName": "elasticloadbalancing.amazonaws.com"
+					}
+				},
+				"Action": [
+					"iam:CreateServiceLinkedRole"
+				],
+				"Resource": [
+					"arn:*:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing"
+				],
+				"Effect": "Allow"
+			},
+			{
+				"Condition": {
+					"StringLike": {
+						"iam:AWSServiceName": "spot.amazonaws.com"
+					}
+				},
+				"Action": [
+					"iam:CreateServiceLinkedRole"
+				],
+				"Resource": [
+					"arn:*:iam::*:role/aws-service-role/spot.amazonaws.com/AWSServiceRoleForEC2Spot"
+				],
+				"Effect": "Allow"
+			},
+			{
+				"Action": [
+					"iam:PassRole"
+				],
+				"Resource": [
+					"arn:*:iam::*:role/*.cluster-api-provider-aws.sigs.k8s.io"
+				],
+				"Effect": "Allow"
+			},
+			{
+				"Action": [
+					"secretsmanager:CreateSecret",
+					"secretsmanager:DeleteSecret",
+					"secretsmanager:TagResource"
+				],
+				"Resource": [
+					"arn:*:secretsmanager:*:*:secret:aws.cluster.x-k8s.io/*"
+				],
+				"Effect": "Allow"
+			}
+		]
+	}`
+
 	controlPlanePolicy = `{
 		"Version": "2012-10-17",
 		"Statement": [
@@ -169,7 +288,7 @@ type state struct{}
 func (s *state) Read(logicalID string, state interface{}) error {
 
 	// Open a file handler
-	f, err := os.Open("/tmp/" + logicalID + ".json")
+	f, err := os.Open(os.Getenv("HOME") + "/.terramorph/" + logicalID + ".json")
 	if err != nil {
 
 		// No file means no state
@@ -187,7 +306,7 @@ func (s *state) Read(logicalID string, state interface{}) error {
 func (s *state) Write(logicalID string, state interface{}) error {
 
 	// Open a file handler
-	f, err := os.Create("/tmp/" + logicalID + ".json")
+	f, err := os.Create(os.Getenv("HOME") + "/.terramorph/" + logicalID + ".json")
 	if err != nil {
 		return err
 	}
@@ -304,11 +423,65 @@ func main() {
 	}
 
 	//-----------------------------------------------------------------------------------
-	// AWS::IAM::Policy               | controllers.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::Role                 | controllers.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::RolePolicyAttachment | controllers.cluster-api-provider-aws.sigs.k8s.io
-	// AWS::IAM::InstanceProfile      | controllers.cluster-api-provider-aws.sigs.k8s.io
+	// controllers.cluster-api-provider-aws.sigs.k8s.io
 	//-----------------------------------------------------------------------------------
+
+	// AWS::IAM::Policy
+	controllersPolicy := &resource.Handler{
+		ResourceLogicalID: "ControllersPolicy",
+		ResourceType:      "aws_iam_policy",
+		ResourceConfig: map[string]interface{}{
+			"name":        "controllers.cluster-api-provider-aws.sigs.k8s.io",
+			"description": "For the Kubernetes Cluster API Provider AWS Controllers",
+			"policy":      controllersPolicy,
+		},
+	}
+
+	if err := controllersPolicy.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::Role
+	controllersRole := &resource.Handler{
+		ResourceLogicalID: "ControllersRole",
+		ResourceType:      "aws_iam_role",
+		ResourceConfig: map[string]interface{}{
+			"name":               "controllers.cluster-api-provider-aws.sigs.k8s.io",
+			"assume_role_policy": assumeRolePolicy,
+		},
+	}
+
+	if err := controllersRole.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::RolePolicyAttachment
+	controllersRolePolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "ControllersRolePolicyAttachment",
+		ResourceType:      "aws_iam_role_policy_attachment",
+		ResourceConfig: map[string]interface{}{
+			"role":       controllersRole.ResourceConfig["name"],
+			"policy_arn": controllersPolicy.ResourceState.ID,
+		},
+	}
+
+	if err := controllersRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::InstanceProfile
+	controllersInstanceProfile := &resource.Handler{
+		ResourceLogicalID: "ControllersInstanceProfile",
+		ResourceType:      "aws_iam_instance_profile",
+		ResourceConfig: map[string]interface{}{
+			"name": "controllers.cluster-api-provider-aws.sigs.k8s.io",
+			"role": controllersRole.ResourceConfig["name"],
+		},
+	}
+
+	if err := controllersInstanceProfile.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
 
 	//----------------------------------------------------
 	// control-plane.cluster-api-provider-aws.sigs.k8s.io
@@ -354,6 +527,34 @@ func main() {
 	}
 
 	if err := controlPlaneRolePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::RolePolicyAttachment
+	controlPlaneRoleToNodesPolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "ControlPlaneRoleToNodesPolicyAttachment",
+		ResourceType:      "aws_iam_role_policy_attachment",
+		ResourceConfig: map[string]interface{}{
+			"role":       controlPlaneRole.ResourceConfig["name"],
+			"policy_arn": nodesPolicy.ResourceState.ID,
+		},
+	}
+
+	if err := controlPlaneRoleToNodesPolicyAttachment.Reconcile(ctx, p, s); err != nil {
+		logrus.Fatal(err)
+	}
+
+	// AWS::IAM::RolePolicyAttachment
+	controlPlaneRoleToControllersPolicyAttachment := &resource.Handler{
+		ResourceLogicalID: "ControlPlaneRoleToControllersPolicyAttachment",
+		ResourceType:      "aws_iam_role_policy_attachment",
+		ResourceConfig: map[string]interface{}{
+			"role":       controlPlaneRole.ResourceConfig["name"],
+			"policy_arn": controllersPolicy.ResourceState.ID,
+		},
+	}
+
+	if err := controlPlaneRoleToControllersPolicyAttachment.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
 	}
 
