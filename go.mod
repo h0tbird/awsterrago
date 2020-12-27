@@ -8,9 +8,11 @@ require (
 	github.com/Microsoft/go-winio v0.4.15 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/aws/aws-sdk-go v1.35.33 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/go-git/go-git/v5 v5.2.0 // indirect
-	github.com/google/go-cmp v0.5.3 // indirect
+	github.com/go-test/deep v1.0.3
+	github.com/google/go-cmp v0.5.3
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-getter v1.5.1 // indirect

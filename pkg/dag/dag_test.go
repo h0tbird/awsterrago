@@ -12,7 +12,6 @@ import (
 
 	"github.com/h0tbird/awsterrago/pkg/tfd"
 
-	_ "github.com/hashicorp/terraform/internal/logging"
 )
 
 func TestMain(m *testing.M) {
