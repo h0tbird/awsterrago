@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/h0tbird/awsterrago/pkg/tfd"
-
 )
 
 func TestMain(m *testing.M) {
