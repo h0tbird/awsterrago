@@ -16,13 +16,16 @@ import (
 	"os"
 
 	// community
-	"github.com/h0tbird/awsterrago/pkg/resource"
 	"github.com/sirupsen/logrus"
 
 	// terraform
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/terraform-providers/terraform-provider-aws/aws"
+
+	//
+	"github.com/h0tbird/awsterrago/pkg/dag"
+	"github.com/h0tbird/awsterrago/pkg/resource"
 )
 
 //-----------------------------------------------------------------------------
@@ -106,6 +109,16 @@ func main() {
 			}
 		}
 	}
+
+	// DAG
+
+	g := dag.AcyclicGraph{}
+
+	g.Add(1)
+	g.Add(2)
+	g.Add(3)
+	g.Connect(dag.BasicEdge(3, 2))
+	g.Connect(dag.BasicEdge(3, 1))
 
 	//--------------------------------------------
 	// nodes.cluster-api-provider-aws.sigs.k8s.io

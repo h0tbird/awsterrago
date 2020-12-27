@@ -12,12 +12,14 @@ require (
 	github.com/go-git/go-git/v5 v5.2.0 // indirect
 	github.com/google/go-cmp v0.5.3 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/errwrap v1.1.0
 	github.com/hashicorp/go-getter v1.5.1 // indirect
 	github.com/hashicorp/go-hclog v0.15.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/go-plugin v1.4.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
-	github.com/hashicorp/terraform v0.14.2 // indirect
+	github.com/hashicorp/hcl/v2 v2.8.0
+	github.com/hashicorp/terraform v0.14.2
 	github.com/hashicorp/terraform-exec v0.11.0 // indirect
 	github.com/hashicorp/terraform-json v0.6.0 // indirect
 	github.com/hashicorp/terraform-plugin-go v0.2.0 // indirect
@@ -35,7 +37,7 @@ require (
 	github.com/sirupsen/logrus v1.4.1
 	github.com/terraform-providers/terraform-provider-aws v1.60.1-0.20201120215712-ce5936f8240d
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
-	github.com/zclconf/go-cty v1.7.0 // indirect
+	github.com/zclconf/go-cty v1.7.0
 	golang.org/x/crypto v0.0.0-20201117144127-c1f2f97bffc9 // indirect
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58 // indirect
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
