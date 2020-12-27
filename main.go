@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
 	// community
 	"github.com/sirupsen/logrus"
@@ -23,9 +24,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 
-	//
+	// local
 	"github.com/h0tbird/awsterrago/pkg/dag"
 	"github.com/h0tbird/awsterrago/pkg/resource"
+	"github.com/h0tbird/awsterrago/pkg/tfd"
 )
 
 //-----------------------------------------------------------------------------
@@ -110,15 +112,35 @@ func main() {
 		}
 	}
 
-	// DAG
+	//----------
+	// DAG test
+	//----------
 
 	g := dag.AcyclicGraph{}
 
 	g.Add(1)
 	g.Add(2)
 	g.Add(3)
-	g.Connect(dag.BasicEdge(3, 2))
-	g.Connect(dag.BasicEdge(3, 1))
+	g.Add(4)
+	g.Add(5)
+	g.Add(6)
+	g.Connect(dag.BasicEdge(1, 2))
+	g.Connect(dag.BasicEdge(1, 3))
+	g.Connect(dag.BasicEdge(1, 4))
+	g.Connect(dag.BasicEdge(2, 5))
+	g.Connect(dag.BasicEdge(3, 5))
+	g.Connect(dag.BasicEdge(5, 6))
+	g.Connect(dag.BasicEdge(4, 6))
+
+	var order []interface{}
+	w := &dag.Walker{Callback: walkCbRecord(&order)}
+	w.Update(&g)
+
+	if err := w.Wait(); err != nil {
+		logrus.Fatalf("err: %s", err)
+	}
+
+	logrus.Println(order)
 
 	//--------------------------------------------
 	// nodes.cluster-api-provider-aws.sigs.k8s.io
@@ -329,5 +351,19 @@ func main() {
 
 	if err := controlPlaneInstanceProfile.Reconcile(ctx, p, s); err != nil {
 		logrus.Fatal(err)
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Test helper callback that just records the order called.
+//-----------------------------------------------------------------------------
+
+func walkCbRecord(order *[]interface{}) dag.WalkFunc {
+	var l sync.Mutex
+	return func(v dag.Vertex) tfd.Diagnostics {
+		l.Lock()
+		defer l.Unlock()
+		*order = append(*order, v)
+		return nil
 	}
 }
