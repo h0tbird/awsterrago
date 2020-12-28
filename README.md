@@ -1,4 +1,4 @@
-# awsterrago
+# terramorph
 
 ```
 aws iam list-policies | jq '.Policies[] | select(.PolicyName | contains("cluster-api-provider-aws"))'

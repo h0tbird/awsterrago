@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/h0tbird/awsterrago/pkg/tfd"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 )
 
 func TestWalker_basic(t *testing.T) {

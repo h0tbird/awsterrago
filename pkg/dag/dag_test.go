@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/h0tbird/awsterrago/pkg/tfd"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 )
 
 func TestMain(m *testing.M) {

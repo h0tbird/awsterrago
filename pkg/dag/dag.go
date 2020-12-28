@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/h0tbird/awsterrago/pkg/tfd"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 
 	"github.com/hashicorp/go-multierror"
 )

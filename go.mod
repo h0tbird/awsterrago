@@ -1,4 +1,4 @@
-module github.com/h0tbird/awsterrago
+module github.com/h0tbird/terramorph
 
 go 1.15
 

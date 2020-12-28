@@ -15,8 +15,8 @@ import (
 	"sync"
 
 	// community
-	"github.com/h0tbird/awsterrago/pkg/dag"
-	"github.com/h0tbird/awsterrago/pkg/tfd"
+	"github.com/h0tbird/terramorph/pkg/dag"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 	"github.com/sirupsen/logrus"
 
 	// terraform

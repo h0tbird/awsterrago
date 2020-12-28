@@ -20,8 +20,8 @@ import (
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 
 	// local
-	"github.com/h0tbird/awsterrago/pkg/dag"
-	"github.com/h0tbird/awsterrago/pkg/resource"
+	"github.com/h0tbird/terramorph/pkg/dag"
+	"github.com/h0tbird/terramorph/pkg/resource"
 )
 
 //-----------------------------------------------------------------------------

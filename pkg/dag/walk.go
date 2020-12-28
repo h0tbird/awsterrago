@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/h0tbird/awsterrago/pkg/tfd"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 )
 
 // Walker is used to walk every vertex of a graph in parallel.
