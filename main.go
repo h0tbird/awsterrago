@@ -272,51 +272,29 @@ func main() {
 
 	g := dag.AcyclicGraph{}
 
-	g.Add(r["nodesPolicy"])
+	for k := range r {
+		g.Add(r[k])
+	}
+
+	// TODO: Automagic connections
 	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
-
-	g.Add(r["nodesRole"])
 	g.Connect(dag.BasicEdge(0, r["nodesRole"]))
-
-	g.Add(r["nodesRoleToNodesPolicyAttachment"])
+	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
+	g.Connect(dag.BasicEdge(0, r["controllersRole"]))
+	g.Connect(dag.BasicEdge(0, r["controlPlanePolicy"]))
+	g.Connect(dag.BasicEdge(0, r["controlPlaneRole"]))
 	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["nodesRoleToNodesPolicyAttachment"]))
 	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesRoleToNodesPolicyAttachment"]))
-
-	g.Add(r["nodesInstanceProfile"])
 	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesInstanceProfile"]))
-
-	g.Add(r["controllersPolicy"])
-	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
-
-	g.Add(r["controllersRole"])
-	g.Connect(dag.BasicEdge(0, r["controllersRole"]))
-
-	g.Add(r["controllersRoleToControllersPolicyAttachment"])
 	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controllersRoleToControllersPolicyAttachment"]))
 	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersRoleToControllersPolicyAttachment"]))
-
-	g.Add(r["controllersInstanceProfile"])
 	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersInstanceProfile"]))
-
-	g.Add(r["controlPlanePolicy"])
-	g.Connect(dag.BasicEdge(0, r["controlPlanePolicy"]))
-
-	g.Add(r["controlPlaneRole"])
-	g.Connect(dag.BasicEdge(0, r["controlPlaneRole"]))
-
-	g.Add(r["controlPlaneRoleToControlPlanePolicyAttachment"])
 	g.Connect(dag.BasicEdge(r["controlPlanePolicy"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
 	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
-
-	g.Add(r["controlPlaneRoleToNodesPolicyAttachment"])
 	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["controlPlaneRoleToNodesPolicyAttachment"]))
 	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToNodesPolicyAttachment"]))
-
-	g.Add(r["controlPlaneRoleToControllersPolicyAttachment"])
 	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controlPlaneRoleToControllersPolicyAttachment"]))
 	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControllersPolicyAttachment"]))
-
-	g.Add(r["controlPlaneInstanceProfile"])
 	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneInstanceProfile"]))
 
 	//--------------
