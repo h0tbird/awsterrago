@@ -19,7 +19,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 
-	// local
+	// terramorph
+	// TODO: move from pkg to v1
 	"github.com/h0tbird/terramorph/pkg/dag"
 	"github.com/h0tbird/terramorph/pkg/resource"
 )
