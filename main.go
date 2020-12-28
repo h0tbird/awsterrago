@@ -168,23 +168,14 @@ func main() {
 	}
 
 	g.Add(r["nodesInstanceProfile"])
-	g.Connect(dag.BasicEdge(r["nodesInstanceProfile"], r["nodesRole"]))
-
-	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, r)}
-	w.Update(&g)
-
-	if err := w.Wait(); err != nil {
-		logrus.Fatalf("err: %s", err)
-	}
-
-	os.Exit(0)
+	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesInstanceProfile"]))
 
 	//-----------------------------------------------------------------------------------
 	// controllers.cluster-api-provider-aws.sigs.k8s.io
 	//-----------------------------------------------------------------------------------
 
 	// AWS::IAM::Policy
-	controllersPolicy := &resource.Handler{
+	r["controllersPolicy"] = &resource.Handler{
 		ResourceLogicalID: "ControllersPolicy",
 		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
@@ -194,11 +185,17 @@ func main() {
 		},
 	}
 
-	//g.Add(&controllersPolicy)
+	g.Add(r["controllersPolicy"])
+	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
 
-	if err := controllersPolicy.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
+	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, r)}
+	w.Update(&g)
+
+	if err := w.Wait(); err != nil {
+		logrus.Fatalf("err: %s", err)
 	}
+
+	os.Exit(0)
 
 	// AWS::IAM::Role
 	controllersRole := &resource.Handler{
@@ -222,7 +219,7 @@ func main() {
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       controllersRole.ResourceConfig["name"],
-			"policy_arn": controllersPolicy.ResourceState.ID,
+			"policy_arn": "controllersPolicy.ResourceState.ID",
 		},
 	}
 
@@ -323,7 +320,7 @@ func main() {
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       controlPlaneRole.ResourceConfig["name"],
-			"policy_arn": controllersPolicy.ResourceState.ID,
+			"policy_arn": "controllersPolicy.ResourceState.ID",
 		},
 	}
 
