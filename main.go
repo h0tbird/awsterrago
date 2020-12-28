@@ -89,7 +89,6 @@ func main() {
 
 	ctx := context.Background()
 	r := map[string]*resource.Handler{}
-	g := dag.AcyclicGraph{}
 	s := &state{}
 
 	//------------------------
@@ -127,9 +126,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["nodesPolicy"])
-	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
-
 	// AWS::IAM::Role
 	r["nodesRole"] = &resource.Handler{
 		ResourceLogicalID: "NodesRole",
@@ -139,9 +135,6 @@ func main() {
 			"assume_role_policy": assumeRolePolicy,
 		},
 	}
-
-	g.Add(r["nodesRole"])
-	g.Connect(dag.BasicEdge(0, r["nodesRole"]))
 
 	// AWS::IAM::RolePolicyAttachment
 	r["nodesRoleToNodesPolicyAttachment"] = &resource.Handler{
@@ -153,10 +146,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["nodesRoleToNodesPolicyAttachment"])
-	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["nodesRoleToNodesPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesRoleToNodesPolicyAttachment"]))
-
 	// AWS::IAM::InstanceProfile
 	r["nodesInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "NodesInstanceProfile",
@@ -166,9 +155,6 @@ func main() {
 			"role": r["nodesRole"].ResourceConfig["name"],
 		},
 	}
-
-	g.Add(r["nodesInstanceProfile"])
-	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesInstanceProfile"]))
 
 	//-----------------------------------------------------------------------------------
 	// controllers.cluster-api-provider-aws.sigs.k8s.io
@@ -185,9 +171,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["controllersPolicy"])
-	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
-
 	// AWS::IAM::Role
 	r["controllersRole"] = &resource.Handler{
 		ResourceLogicalID: "ControllersRole",
@@ -197,9 +180,6 @@ func main() {
 			"assume_role_policy": assumeRolePolicy,
 		},
 	}
-
-	g.Add(r["controllersRole"])
-	g.Connect(dag.BasicEdge(0, r["controllersRole"]))
 
 	// AWS::IAM::RolePolicyAttachment
 	r["controllersRoleToControllersPolicyAttachment"] = &resource.Handler{
@@ -211,10 +191,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["controllersRoleToControllersPolicyAttachment"])
-	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controllersRoleToControllersPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersRoleToControllersPolicyAttachment"]))
-
 	// AWS::IAM::InstanceProfile
 	r["controllersInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "ControllersInstanceProfile",
@@ -224,9 +200,6 @@ func main() {
 			"role": r["controllersRole"].ResourceConfig["name"],
 		},
 	}
-
-	g.Add(r["controllersInstanceProfile"])
-	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersInstanceProfile"]))
 
 	//----------------------------------------------------
 	// control-plane.cluster-api-provider-aws.sigs.k8s.io
@@ -243,9 +216,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["controlPlanePolicy"])
-	g.Connect(dag.BasicEdge(0, r["controlPlanePolicy"]))
-
 	// AWS::IAM::Role
 	r["controlPlaneRole"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRole",
@@ -255,9 +225,6 @@ func main() {
 			"assume_role_policy": assumeRolePolicy,
 		},
 	}
-
-	g.Add(r["controlPlaneRole"])
-	g.Connect(dag.BasicEdge(0, r["controlPlaneRole"]))
 
 	// AWS::IAM::RolePolicyAttachment
 	r["controlPlaneRoleToControlPlanePolicyAttachment"] = &resource.Handler{
@@ -269,10 +236,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["controlPlaneRoleToControlPlanePolicyAttachment"])
-	g.Connect(dag.BasicEdge(r["controlPlanePolicy"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
-
 	// AWS::IAM::RolePolicyAttachment
 	r["controlPlaneRoleToNodesPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToNodesPolicyAttachment",
@@ -282,10 +245,6 @@ func main() {
 			"policy_arn": "nodesPolicy.ResourceState.ID",
 		},
 	}
-
-	g.Add(r["controlPlaneRoleToNodesPolicyAttachment"])
-	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["controlPlaneRoleToNodesPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToNodesPolicyAttachment"]))
 
 	// AWS::IAM::RolePolicyAttachment
 	r["controlPlaneRoleToControllersPolicyAttachment"] = &resource.Handler{
@@ -297,10 +256,6 @@ func main() {
 		},
 	}
 
-	g.Add(r["controlPlaneRoleToControllersPolicyAttachment"])
-	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controlPlaneRoleToControllersPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControllersPolicyAttachment"]))
-
 	// AWS::IAM::InstanceProfile
 	r["controlPlaneInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneInstanceProfile",
@@ -310,6 +265,56 @@ func main() {
 			"role": r["controlPlaneRole"].ResourceConfig["name"],
 		},
 	}
+
+	//---------------
+	// Setup the DAG
+	//---------------
+
+	g := dag.AcyclicGraph{}
+
+	g.Add(r["nodesPolicy"])
+	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
+
+	g.Add(r["nodesRole"])
+	g.Connect(dag.BasicEdge(0, r["nodesRole"]))
+
+	g.Add(r["nodesRoleToNodesPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["nodesRoleToNodesPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesRoleToNodesPolicyAttachment"]))
+
+	g.Add(r["nodesInstanceProfile"])
+	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesInstanceProfile"]))
+
+	g.Add(r["controllersPolicy"])
+	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
+
+	g.Add(r["controllersRole"])
+	g.Connect(dag.BasicEdge(0, r["controllersRole"]))
+
+	g.Add(r["controllersRoleToControllersPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controllersRoleToControllersPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersRoleToControllersPolicyAttachment"]))
+
+	g.Add(r["controllersInstanceProfile"])
+	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersInstanceProfile"]))
+
+	g.Add(r["controlPlanePolicy"])
+	g.Connect(dag.BasicEdge(0, r["controlPlanePolicy"]))
+
+	g.Add(r["controlPlaneRole"])
+	g.Connect(dag.BasicEdge(0, r["controlPlaneRole"]))
+
+	g.Add(r["controlPlaneRoleToControlPlanePolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["controlPlanePolicy"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
+
+	g.Add(r["controlPlaneRoleToNodesPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["controlPlaneRoleToNodesPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToNodesPolicyAttachment"]))
+
+	g.Add(r["controlPlaneRoleToControllersPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controlPlaneRoleToControllersPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControllersPolicyAttachment"]))
 
 	g.Add(r["controlPlaneInstanceProfile"])
 	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneInstanceProfile"]))
