@@ -188,17 +188,8 @@ func main() {
 	g.Add(r["controllersPolicy"])
 	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
 
-	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, r)}
-	w.Update(&g)
-
-	if err := w.Wait(); err != nil {
-		logrus.Fatalf("err: %s", err)
-	}
-
-	os.Exit(0)
-
 	// AWS::IAM::Role
-	controllersRole := &resource.Handler{
+	r["controllersRole"] = &resource.Handler{
 		ResourceLogicalID: "ControllersRole",
 		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
@@ -207,50 +198,42 @@ func main() {
 		},
 	}
 
-	//g.Add(&controllersRole)
-
-	if err := controllersRole.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controllersRole"])
+	g.Connect(dag.BasicEdge(0, r["controllersRole"]))
 
 	// AWS::IAM::RolePolicyAttachment
-	controllersRoleToControllersPolicyAttachment := &resource.Handler{
+	r["controllersRoleToControllersPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControllersRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       controllersRole.ResourceConfig["name"],
+			"role":       r["controllersRole"].ResourceConfig["name"],
 			"policy_arn": "controllersPolicy.ResourceState.ID",
 		},
 	}
 
-	//g.Add(&controllersRoleToControllersPolicyAttachment)
-
-	if err := controllersRoleToControllersPolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controllersRoleToControllersPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controllersRoleToControllersPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersRoleToControllersPolicyAttachment"]))
 
 	// AWS::IAM::InstanceProfile
-	controllersInstanceProfile := &resource.Handler{
+	r["controllersInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "ControllersInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "controllers.cluster-api-provider-aws.sigs.k8s.io",
-			"role": controllersRole.ResourceConfig["name"],
+			"role": r["controllersRole"].ResourceConfig["name"],
 		},
 	}
 
-	//g.Add(&controllersInstanceProfile)
-
-	if err := controllersInstanceProfile.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controllersInstanceProfile"])
+	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersInstanceProfile"]))
 
 	//----------------------------------------------------
 	// control-plane.cluster-api-provider-aws.sigs.k8s.io
 	//----------------------------------------------------
 
 	// AWS::IAM::Policy
-	controlPlanePolicy := &resource.Handler{
+	r["controlPlanePolicy"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlanePolicy",
 		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
@@ -260,14 +243,11 @@ func main() {
 		},
 	}
 
-	//g.Add(&controlPlanePolicy)
-
-	if err := controlPlanePolicy.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controlPlanePolicy"])
+	g.Connect(dag.BasicEdge(0, r["controlPlanePolicy"]))
 
 	// AWS::IAM::Role
-	controlPlaneRole := &resource.Handler{
+	r["controlPlaneRole"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRole",
 		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
@@ -276,73 +256,72 @@ func main() {
 		},
 	}
 
-	//g.Add(&controlPlaneRole)
-
-	if err := controlPlaneRole.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controlPlaneRole"])
+	g.Connect(dag.BasicEdge(0, r["controlPlaneRole"]))
 
 	// AWS::IAM::RolePolicyAttachment
-	controlPlaneRoleToControlPlanePolicyAttachment := &resource.Handler{
+	r["controlPlaneRoleToControlPlanePolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToControlPlanePolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       controlPlaneRole.ResourceConfig["name"],
-			"policy_arn": controlPlanePolicy.ResourceState.ID,
+			"role":       r["controlPlaneRole"].ResourceConfig["name"],
+			"policy_arn": "controlPlanePolicy.ResourceState.ID",
 		},
 	}
 
-	//g.Add(&controlPlaneRoleToControlPlanePolicyAttachment)
-
-	if err := controlPlaneRoleToControlPlanePolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controlPlaneRoleToControlPlanePolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["controlPlanePolicy"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
 
 	// AWS::IAM::RolePolicyAttachment
-	controlPlaneRoleToNodesPolicyAttachment := &resource.Handler{
+	r["controlPlaneRoleToNodesPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       controlPlaneRole.ResourceConfig["name"],
-			"policy_arn": r["nodesPolicy"].ResourceState.ID,
+			"role":       r["controlPlaneRole"].ResourceConfig["name"],
+			"policy_arn": "nodesPolicy.ResourceState.ID",
 		},
 	}
 
-	//g.Add(&controlPlaneRoleToNodesPolicyAttachment)
-
-	if err := controlPlaneRoleToNodesPolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controlPlaneRoleToNodesPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["controlPlaneRoleToNodesPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToNodesPolicyAttachment"]))
 
 	// AWS::IAM::RolePolicyAttachment
-	controlPlaneRoleToControllersPolicyAttachment := &resource.Handler{
+	r["controlPlaneRoleToControllersPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       controlPlaneRole.ResourceConfig["name"],
+			"role":       r["controlPlaneRole"].ResourceConfig["name"],
 			"policy_arn": "controllersPolicy.ResourceState.ID",
 		},
 	}
 
-	//g.Add(&controlPlaneRoleToControllersPolicyAttachment)
-
-	if err := controlPlaneRoleToControllersPolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["controlPlaneRoleToControllersPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controlPlaneRoleToControllersPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControllersPolicyAttachment"]))
 
 	// AWS::IAM::InstanceProfile
-	controlPlaneInstanceProfile := &resource.Handler{
+	r["controlPlaneInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "control-plane.cluster-api-provider-aws.sigs.k8s.io",
-			"role": controlPlaneRole.ResourceConfig["name"],
+			"role": r["controlPlaneRole"].ResourceConfig["name"],
 		},
 	}
 
-	//g.Add(&controlPlaneInstanceProfile)
+	g.Add(r["controlPlaneInstanceProfile"])
+	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneInstanceProfile"]))
 
-	if err := controlPlaneInstanceProfile.Reconcile(ctx, p, s, r); err != nil {
-		logrus.Fatal(err)
+	//--------------
+	// Walk the DAG
+	//--------------
+
+	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, r)}
+	w.Update(&g)
+
+	if err := w.Wait(); err != nil {
+		logrus.Fatalf("err: %s", err)
 	}
 }
