@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"sync"
 
 	// community
 	"github.com/sirupsen/logrus"
@@ -27,7 +26,6 @@ import (
 	// local
 	"github.com/h0tbird/awsterrago/pkg/dag"
 	"github.com/h0tbird/awsterrago/pkg/resource"
-	"github.com/h0tbird/awsterrago/pkg/tfd"
 )
 
 //-----------------------------------------------------------------------------
@@ -90,6 +88,8 @@ func init() {
 func main() {
 
 	ctx := context.Background()
+	r := map[string]*resource.Handler{}
+	g := dag.AcyclicGraph{}
 	s := &state{}
 
 	//------------------------
@@ -112,42 +112,12 @@ func main() {
 		}
 	}
 
-	//----------
-	// DAG test
-	//----------
-
-	g := dag.AcyclicGraph{}
-
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Add(4)
-	g.Add(5)
-	g.Add(6)
-	g.Connect(dag.BasicEdge(1, 2))
-	g.Connect(dag.BasicEdge(1, 3))
-	g.Connect(dag.BasicEdge(1, 4))
-	g.Connect(dag.BasicEdge(2, 5))
-	g.Connect(dag.BasicEdge(3, 5))
-	g.Connect(dag.BasicEdge(5, 6))
-	g.Connect(dag.BasicEdge(4, 6))
-
-	var order []interface{}
-	w := &dag.Walker{Callback: walkCbRecord(&order)}
-	w.Update(&g)
-
-	if err := w.Wait(); err != nil {
-		logrus.Fatalf("err: %s", err)
-	}
-
-	logrus.Println(order)
-
 	//--------------------------------------------
 	// nodes.cluster-api-provider-aws.sigs.k8s.io
 	//--------------------------------------------
 
 	// AWS::IAM::Policy
-	nodesPolicy := &resource.Handler{
+	r["nodesPolicy"] = &resource.Handler{
 		ResourceLogicalID: "NodesPolicy",
 		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
@@ -157,12 +127,11 @@ func main() {
 		},
 	}
 
-	if err := nodesPolicy.Reconcile(ctx, p, s); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["nodesPolicy"])
+	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
 
 	// AWS::IAM::Role
-	nodesRole := &resource.Handler{
+	r["nodesRole"] = &resource.Handler{
 		ResourceLogicalID: "NodesRole",
 		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
@@ -171,37 +140,44 @@ func main() {
 		},
 	}
 
-	if err := nodesRole.Reconcile(ctx, p, s); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["nodesRole"])
+	g.Connect(dag.BasicEdge(0, r["nodesRole"]))
 
 	// AWS::IAM::RolePolicyAttachment
-	nodesRoleToNodesPolicyAttachment := &resource.Handler{
+	r["nodesRoleToNodesPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "NodesRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       nodesRole.ResourceConfig["name"],
-			"policy_arn": nodesPolicy.ResourceState.ID,
+			"role":       r["nodesRole"].ResourceConfig["name"],
+			"policy_arn": "nodesPolicy.ResourceState.ID",
 		},
 	}
 
-	if err := nodesRoleToNodesPolicyAttachment.Reconcile(ctx, p, s); err != nil {
-		logrus.Fatal(err)
-	}
+	g.Add(r["nodesRoleToNodesPolicyAttachment"])
+	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["nodesRoleToNodesPolicyAttachment"]))
+	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesRoleToNodesPolicyAttachment"]))
 
 	// AWS::IAM::InstanceProfile
-	nodesInstanceProfile := &resource.Handler{
+	r["nodesInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "NodesInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
-			"role": nodesRole.ResourceConfig["name"],
+			"role": r["nodesRole"].ResourceConfig["name"],
 		},
 	}
 
-	if err := nodesInstanceProfile.Reconcile(ctx, p, s); err != nil {
-		logrus.Fatal(err)
+	g.Add(r["nodesInstanceProfile"])
+	g.Connect(dag.BasicEdge(r["nodesInstanceProfile"], r["nodesRole"]))
+
+	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, r)}
+	w.Update(&g)
+
+	if err := w.Wait(); err != nil {
+		logrus.Fatalf("err: %s", err)
 	}
+
+	os.Exit(0)
 
 	//-----------------------------------------------------------------------------------
 	// controllers.cluster-api-provider-aws.sigs.k8s.io
@@ -218,7 +194,9 @@ func main() {
 		},
 	}
 
-	if err := controllersPolicy.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controllersPolicy)
+
+	if err := controllersPolicy.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -232,7 +210,9 @@ func main() {
 		},
 	}
 
-	if err := controllersRole.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controllersRole)
+
+	if err := controllersRole.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -246,7 +226,9 @@ func main() {
 		},
 	}
 
-	if err := controllersRoleToControllersPolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controllersRoleToControllersPolicyAttachment)
+
+	if err := controllersRoleToControllersPolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -260,7 +242,9 @@ func main() {
 		},
 	}
 
-	if err := controllersInstanceProfile.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controllersInstanceProfile)
+
+	if err := controllersInstanceProfile.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -279,7 +263,9 @@ func main() {
 		},
 	}
 
-	if err := controlPlanePolicy.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controlPlanePolicy)
+
+	if err := controlPlanePolicy.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -293,7 +279,9 @@ func main() {
 		},
 	}
 
-	if err := controlPlaneRole.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controlPlaneRole)
+
+	if err := controlPlaneRole.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -307,7 +295,9 @@ func main() {
 		},
 	}
 
-	if err := controlPlaneRoleToControlPlanePolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controlPlaneRoleToControlPlanePolicyAttachment)
+
+	if err := controlPlaneRoleToControlPlanePolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -317,11 +307,13 @@ func main() {
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
 			"role":       controlPlaneRole.ResourceConfig["name"],
-			"policy_arn": nodesPolicy.ResourceState.ID,
+			"policy_arn": r["nodesPolicy"].ResourceState.ID,
 		},
 	}
 
-	if err := controlPlaneRoleToNodesPolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controlPlaneRoleToNodesPolicyAttachment)
+
+	if err := controlPlaneRoleToNodesPolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -335,7 +327,9 @@ func main() {
 		},
 	}
 
-	if err := controlPlaneRoleToControllersPolicyAttachment.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controlPlaneRoleToControllersPolicyAttachment)
+
+	if err := controlPlaneRoleToControllersPolicyAttachment.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -349,21 +343,9 @@ func main() {
 		},
 	}
 
-	if err := controlPlaneInstanceProfile.Reconcile(ctx, p, s); err != nil {
+	//g.Add(&controlPlaneInstanceProfile)
+
+	if err := controlPlaneInstanceProfile.Reconcile(ctx, p, s, r); err != nil {
 		logrus.Fatal(err)
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Test helper callback that just records the order called.
-//-----------------------------------------------------------------------------
-
-func walkCbRecord(order *[]interface{}) dag.WalkFunc {
-	var l sync.Mutex
-	return func(v dag.Vertex) tfd.Diagnostics {
-		l.Lock()
-		defer l.Unlock()
-		*order = append(*order, v)
-		return nil
 	}
 }

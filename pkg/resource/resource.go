@@ -9,9 +9,14 @@ import (
 	// stdlib
 	"context"
 	"fmt"
+	"reflect"
+	"regexp"
 	"strings"
+	"sync"
 
 	// community
+	"github.com/h0tbird/awsterrago/pkg/dag"
+	"github.com/h0tbird/awsterrago/pkg/tfd"
 	"github.com/sirupsen/logrus"
 
 	// terraform
@@ -21,13 +26,17 @@ import (
 )
 
 //-----------------------------------------------------------------------------
-// Fields ignored by resource type
+// Globals
 //-----------------------------------------------------------------------------
 
+// Fields ignored by resource type
 var importStateIgnore = map[string][]string{
 	"aws_s3_bucket": []string{"force_destroy", "acl"},
 	"aws_iam_role":  []string{"force_detach_policies"},
 }
+
+// Remote state regexp: <resource>.ResourceState.<field>
+var reg = regexp.MustCompile("(\\w+)\\.ResourceState\\.(\\w+)")
 
 //-----------------------------------------------------------------------------
 // Types
@@ -52,12 +61,20 @@ type Handler struct {
 //-----------------------------------------------------------------------------
 
 // Reconcile ...
-func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) error {
+func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State, r map[string]*Handler) error {
 
 	// Fixed log fields
 	logFields := logrus.Fields{
 		"id":   h.ResourceLogicalID,
 		"type": h.ResourceType,
+	}
+
+	// Update ResourceConfig with remote ResourceState
+	for k, v := range h.ResourceConfig {
+		submatch := reg.FindStringSubmatch(v.(string))
+		if submatch != nil {
+			h.ResourceConfig[k] = reflect.ValueOf(r[submatch[1]].ResourceState).Elem().FieldByName(submatch[2]).String()
+		}
 	}
 
 	// Resource pointer and config
@@ -135,4 +152,21 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State) er
 	}
 
 	return nil
+}
+
+// Walk ...
+func Walk(ctx context.Context, p *schema.Provider, s State, r map[string]*Handler) dag.WalkFunc {
+	var l sync.Mutex
+	return func(v dag.Vertex) tfd.Diagnostics {
+		l.Lock()
+		defer l.Unlock()
+
+		rh := v.(*Handler)
+		if err := rh.Reconcile(ctx, p, s, r); err != nil {
+			// TODO: Return diagnostics
+			logrus.Fatal(err)
+		}
+
+		return nil
+	}
 }
