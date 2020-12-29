@@ -8,8 +8,11 @@ import (
 
 	// stdlib
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"regexp"
 
 	// community
 	"github.com/sirupsen/logrus"
@@ -224,10 +227,19 @@ func main() {
 	//---------------
 
 	g := dag.AcyclicGraph{}
+	var reg = regexp.MustCompile("(\\w+)\\.ResourceState\\.(\\w+)")
 
-	for k := range r {
-		g.Add(r[k])
+	for k1, v1 := range r {
+		g.Add(r[k1])
+		for _, v2 := range v1.ResourceConfig {
+			submatch := reg.FindStringSubmatch(v2.(string))
+			if submatch != nil {
+				fmt.Printf("g.Connect(dag.BasicEdge(r[\"%s\"], r[\"%s\"]))\n", submatch[1], k1)
+			}
+		}
 	}
+
+	os.Exit(0)
 
 	// TODO: Automagic connections
 	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
