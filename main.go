@@ -23,6 +23,7 @@ import (
 	// TODO: move from pkg to v1
 	"github.com/h0tbird/terramorph/pkg/manifest"
 	"github.com/h0tbird/terramorph/pkg/resource"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 )
 
 //-----------------------------------------------------------------------------
@@ -223,5 +224,12 @@ func main() {
 	// Apply the manifest
 	//--------------------
 
-	m.Apply(ctx, p, s)
+	diags2 := m.Apply(ctx, p, s)
+	if diags2 != nil && diags2.HasErrors() {
+		for _, d := range diags2 {
+			if d.Severity() == tfd.Error {
+				logrus.Fatalf("error applying the manifest: %s", d.Description())
+			}
+		}
+	}
 }

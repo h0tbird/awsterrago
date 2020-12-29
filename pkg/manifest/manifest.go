@@ -9,15 +9,13 @@ import (
 	// stdlib
 	"context"
 
-	// community
-	"github.com/sirupsen/logrus"
-
 	// terraform
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	// terramorph
 	"github.com/h0tbird/terramorph/pkg/dag"
 	"github.com/h0tbird/terramorph/pkg/resource"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 )
 
 //-----------------------------------------------------------------------------
@@ -43,7 +41,7 @@ func New() *Handler {
 }
 
 // Apply ...
-func (h *Handler) Apply(ctx context.Context, p *schema.Provider, s resource.State) {
+func (h *Handler) Apply(ctx context.Context, p *schema.Provider, s resource.State) tfd.Diagnostics {
 
 	// Setup the DAG
 	for resKey, resVal := range h.Resources {
@@ -71,8 +69,6 @@ func (h *Handler) Apply(ctx context.Context, p *schema.Provider, s resource.Stat
 	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, h.Resources)}
 	w.Update(&h.Dag)
 
-	// TODO: err is Diagnostics (return it)
-	if err := w.Wait(); err != nil {
-		logrus.Fatalf("err: %s", err)
-	}
+	// Return tfd.Diagnostics
+	return w.Wait()
 }
