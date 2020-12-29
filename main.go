@@ -226,7 +226,7 @@ func main() {
 	//---------------
 
 	g := dag.AcyclicGraph{}
-	var reg = regexp.MustCompile("(\\w+)\\.ResourceState\\.(\\w+)")
+	var reg = regexp.MustCompile("(\\w+)\\.(ResourceConfig|ResourceState)\\.(\\w+)")
 
 	for resKey, resVal := range r {
 		g.Add(resVal)

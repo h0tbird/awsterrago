@@ -35,8 +35,8 @@ var importStateIgnore = map[string][]string{
 	"aws_iam_role":  []string{"force_detach_policies"},
 }
 
-// Remote state regexp: <resource>.ResourceState.<field>
-var reg = regexp.MustCompile("(\\w+)\\.ResourceState\\.(\\w+)")
+// <resource>.<ResourceConfig|ResourceState>.<field>
+var reg = regexp.MustCompile("(\\w+)\\.(ResourceConfig|ResourceState)\\.(\\w+)")
 
 //-----------------------------------------------------------------------------
 // Types
@@ -69,11 +69,16 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State, r 
 		"type": h.ResourceType,
 	}
 
-	// Update ResourceConfig with remote ResourceState
+	// Update the ResourceConfig
 	for k, v := range h.ResourceConfig {
 		submatch := reg.FindStringSubmatch(v.(string))
 		if submatch != nil {
-			h.ResourceConfig[k] = reflect.ValueOf(r[submatch[1]].ResourceState).Elem().FieldByName(submatch[2]).String()
+			switch submatch[2] {
+			case "ResourceConfig":
+				h.ResourceConfig[k] = r[submatch[1]].ResourceConfig[submatch[3]]
+			case "ResourceState":
+				h.ResourceConfig[k] = reflect.ValueOf(r[submatch[1]].ResourceState).Elem().FieldByName(submatch[3]).String()
+			}
 		}
 	}
 
