@@ -96,7 +96,7 @@ func main() {
 		ResourceLogicalID: "NodesRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       r["nodesRole"].ResourceConfig["name"],
+			"role":       "nodesRole.ResourceConfig.name",
 			"policy_arn": "nodesPolicy.ResourceState.ID",
 		},
 	}
@@ -107,7 +107,7 @@ func main() {
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "nodes.cluster-api-provider-aws.sigs.k8s.io",
-			"role": r["nodesRole"].ResourceConfig["name"],
+			"role": "nodesRole.ResourceConfig.name",
 		},
 	}
 
@@ -141,7 +141,7 @@ func main() {
 		ResourceLogicalID: "ControllersRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       r["controllersRole"].ResourceConfig["name"],
+			"role":       "controllersRole.ResourceConfig.name",
 			"policy_arn": "controllersPolicy.ResourceState.ID",
 		},
 	}
@@ -152,7 +152,7 @@ func main() {
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "controllers.cluster-api-provider-aws.sigs.k8s.io",
-			"role": r["controllersRole"].ResourceConfig["name"],
+			"role": "controllersRole.ResourceConfig.name",
 		},
 	}
 
@@ -186,7 +186,7 @@ func main() {
 		ResourceLogicalID: "ControlPlaneRoleToControlPlanePolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       r["controlPlaneRole"].ResourceConfig["name"],
+			"role":       "controlPlaneRole.ResourceConfig.name",
 			"policy_arn": "controlPlanePolicy.ResourceState.ID",
 		},
 	}
@@ -196,7 +196,7 @@ func main() {
 		ResourceLogicalID: "ControlPlaneRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       r["controlPlaneRole"].ResourceConfig["name"],
+			"role":       "controlPlaneRole.ResourceConfig.name",
 			"policy_arn": "nodesPolicy.ResourceState.ID",
 		},
 	}
@@ -206,7 +206,7 @@ func main() {
 		ResourceLogicalID: "ControlPlaneRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
-			"role":       r["controlPlaneRole"].ResourceConfig["name"],
+			"role":       "controlPlaneRole.ResourceConfig.name",
 			"policy_arn": "controllersPolicy.ResourceState.ID",
 		},
 	}
@@ -217,7 +217,7 @@ func main() {
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
 			"name": "control-plane.cluster-api-provider-aws.sigs.k8s.io",
-			"role": r["controlPlaneRole"].ResourceConfig["name"],
+			"role": "controlPlaneRole.ResourceConfig.name",
 		},
 	}
 
