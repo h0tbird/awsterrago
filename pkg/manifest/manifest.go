@@ -8,6 +8,10 @@ import (
 
 	// stdlib
 	"context"
+	"sync"
+
+	// community
+	"github.com/sirupsen/logrus"
 
 	// terraform
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -66,9 +70,29 @@ func (h *Handler) Apply(ctx context.Context, p *schema.Provider, s resource.Stat
 	}
 
 	// Walk the DAG
-	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, h.Resources)}
+	w := &dag.Walker{Callback: walk(ctx, p, s, h.Resources)}
 	w.Update(&h.Dag)
 
 	// Return tfd.Diagnostics
 	return w.Wait()
+}
+
+//-----------------------------------------------------------------------------
+// walk
+//-----------------------------------------------------------------------------
+
+func walk(ctx context.Context, p *schema.Provider, s resource.State, r map[string]*resource.Handler) dag.WalkFunc {
+	var l sync.Mutex
+	return func(v dag.Vertex) tfd.Diagnostics {
+		l.Lock()
+		defer l.Unlock()
+
+		rh := v.(*resource.Handler)
+		if err := rh.Reconcile(ctx, p, s, r); err != nil {
+			// TODO: Return diagnostics
+			logrus.Fatal(err)
+		}
+
+		return nil
+	}
 }
