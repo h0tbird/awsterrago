@@ -220,6 +220,12 @@ func main() {
 		},
 	}
 
+	// TODO: Implement the 'Manifest' type?
+	// m1 := Manifest{}
+	// m1.r["foo"] := &resource.Handler{...}
+	// m1.r["bar"] := &resource.Handler{...}
+	// m1.Apply()
+
 	//---------------
 	// Setup the DAG
 	//---------------

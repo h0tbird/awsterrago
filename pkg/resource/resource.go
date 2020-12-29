@@ -160,6 +160,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State, r 
 }
 
 // Walk ...
+// TODO: Move this to the 'Manifest' package?
 func Walk(ctx context.Context, p *schema.Provider, s State, r map[string]*Handler) dag.WalkFunc {
 	var l sync.Mutex
 	return func(v dag.Vertex) tfd.Diagnostics {
