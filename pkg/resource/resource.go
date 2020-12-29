@@ -15,14 +15,16 @@ import (
 	"sync"
 
 	// community
-	"github.com/h0tbird/terramorph/pkg/dag"
-	"github.com/h0tbird/terramorph/pkg/tfd"
 	"github.com/sirupsen/logrus"
 
 	// terraform
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	// terramorph
+	"github.com/h0tbird/terramorph/pkg/dag"
+	"github.com/h0tbird/terramorph/pkg/tfd"
 )
 
 //-----------------------------------------------------------------------------
@@ -36,7 +38,7 @@ var importStateIgnore = map[string][]string{
 }
 
 // <resource>.<ResourceConfig|ResourceState>.<field>
-var reg = regexp.MustCompile("(\\w+)\\.(ResourceConfig|ResourceState)\\.(\\w+)")
+var Reg = regexp.MustCompile("(\\w+)\\.(ResourceConfig|ResourceState)\\.(\\w+)")
 
 //-----------------------------------------------------------------------------
 // Types
@@ -71,7 +73,7 @@ func (h *Handler) Reconcile(ctx context.Context, p *schema.Provider, s State, r 
 
 	// Update the ResourceConfig
 	for k, v := range h.ResourceConfig {
-		submatch := reg.FindStringSubmatch(v.(string))
+		submatch := Reg.FindStringSubmatch(v.(string))
 		if submatch != nil {
 			switch submatch[2] {
 			case "ResourceConfig":

@@ -10,7 +10,6 @@ import (
 	"context"
 	"io/ioutil"
 	"log"
-	"regexp"
 
 	// community
 	"github.com/sirupsen/logrus"
@@ -22,7 +21,7 @@ import (
 
 	// terramorph
 	// TODO: move from pkg to v1
-	"github.com/h0tbird/terramorph/pkg/dag"
+	"github.com/h0tbird/terramorph/pkg/manifest"
 	"github.com/h0tbird/terramorph/pkg/resource"
 )
 
@@ -42,7 +41,7 @@ func init() {
 func main() {
 
 	ctx := context.Background()
-	r := map[string]*resource.Handler{}
+	m := manifest.New()
 	s := &state{}
 
 	//------------------------
@@ -70,7 +69,7 @@ func main() {
 	//--------------------------------------------
 
 	// AWS::IAM::Policy
-	r["nodesPolicy"] = &resource.Handler{
+	m.Resources["nodesPolicy"] = &resource.Handler{
 		ResourceLogicalID: "NodesPolicy",
 		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
@@ -81,7 +80,7 @@ func main() {
 	}
 
 	// AWS::IAM::Role
-	r["nodesRole"] = &resource.Handler{
+	m.Resources["nodesRole"] = &resource.Handler{
 		ResourceLogicalID: "NodesRole",
 		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
@@ -91,7 +90,7 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	r["nodesRoleToNodesPolicyAttachment"] = &resource.Handler{
+	m.Resources["nodesRoleToNodesPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "NodesRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
@@ -101,7 +100,7 @@ func main() {
 	}
 
 	// AWS::IAM::InstanceProfile
-	r["nodesInstanceProfile"] = &resource.Handler{
+	m.Resources["nodesInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "NodesInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
@@ -115,7 +114,7 @@ func main() {
 	//-----------------------------------------------------------------------------------
 
 	// AWS::IAM::Policy
-	r["controllersPolicy"] = &resource.Handler{
+	m.Resources["controllersPolicy"] = &resource.Handler{
 		ResourceLogicalID: "ControllersPolicy",
 		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
@@ -126,7 +125,7 @@ func main() {
 	}
 
 	// AWS::IAM::Role
-	r["controllersRole"] = &resource.Handler{
+	m.Resources["controllersRole"] = &resource.Handler{
 		ResourceLogicalID: "ControllersRole",
 		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
@@ -136,7 +135,7 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	r["controllersRoleToControllersPolicyAttachment"] = &resource.Handler{
+	m.Resources["controllersRoleToControllersPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControllersRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
@@ -146,7 +145,7 @@ func main() {
 	}
 
 	// AWS::IAM::InstanceProfile
-	r["controllersInstanceProfile"] = &resource.Handler{
+	m.Resources["controllersInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "ControllersInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
@@ -160,7 +159,7 @@ func main() {
 	//----------------------------------------------------
 
 	// AWS::IAM::Policy
-	r["controlPlanePolicy"] = &resource.Handler{
+	m.Resources["controlPlanePolicy"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlanePolicy",
 		ResourceType:      "aws_iam_policy",
 		ResourceConfig: map[string]interface{}{
@@ -171,7 +170,7 @@ func main() {
 	}
 
 	// AWS::IAM::Role
-	r["controlPlaneRole"] = &resource.Handler{
+	m.Resources["controlPlaneRole"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRole",
 		ResourceType:      "aws_iam_role",
 		ResourceConfig: map[string]interface{}{
@@ -181,7 +180,7 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	r["controlPlaneRoleToControlPlanePolicyAttachment"] = &resource.Handler{
+	m.Resources["controlPlaneRoleToControlPlanePolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToControlPlanePolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
@@ -191,7 +190,7 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	r["controlPlaneRoleToNodesPolicyAttachment"] = &resource.Handler{
+	m.Resources["controlPlaneRoleToNodesPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToNodesPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
@@ -201,7 +200,7 @@ func main() {
 	}
 
 	// AWS::IAM::RolePolicyAttachment
-	r["controlPlaneRoleToControllersPolicyAttachment"] = &resource.Handler{
+	m.Resources["controlPlaneRoleToControllersPolicyAttachment"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneRoleToControllersPolicyAttachment",
 		ResourceType:      "aws_iam_role_policy_attachment",
 		ResourceConfig: map[string]interface{}{
@@ -211,7 +210,7 @@ func main() {
 	}
 
 	// AWS::IAM::InstanceProfile
-	r["controlPlaneInstanceProfile"] = &resource.Handler{
+	m.Resources["controlPlaneInstanceProfile"] = &resource.Handler{
 		ResourceLogicalID: "ControlPlaneInstanceProfile",
 		ResourceType:      "aws_iam_instance_profile",
 		ResourceConfig: map[string]interface{}{
@@ -220,48 +219,9 @@ func main() {
 		},
 	}
 
-	// TODO: Implement the 'Manifest' type?
-	// m1 := Manifest{}
-	// m1.r["foo"] := &resource.Handler{...}
-	// m1.r["bar"] := &resource.Handler{...}
-	// m1.Apply()
+	//--------------------
+	// Apply the manifest
+	//--------------------
 
-	//---------------
-	// Setup the DAG
-	//---------------
-
-	g := dag.AcyclicGraph{}
-	var reg = regexp.MustCompile("(\\w+)\\.(ResourceConfig|ResourceState)\\.(\\w+)")
-
-	for resKey, resVal := range r {
-
-		// All vertices
-		g.Add(resVal)
-		match := false
-
-		// Dependent edges
-		for _, fieldVal := range resVal.ResourceConfig {
-			submatch := reg.FindStringSubmatch(fieldVal.(string))
-			if submatch != nil {
-				g.Connect(dag.BasicEdge(r[submatch[1]], r[resKey]))
-				match = true
-			}
-		}
-
-		// Non-dependent edges
-		if !match {
-			g.Connect(dag.BasicEdge(0, r[resKey]))
-		}
-	}
-
-	//--------------
-	// Walk the DAG
-	//--------------
-
-	w := &dag.Walker{Callback: resource.Walk(ctx, p, s, r)}
-	w.Update(&g)
-
-	if err := w.Wait(); err != nil {
-		logrus.Fatalf("err: %s", err)
-	}
+	m.Apply(ctx, p, s)
 }
