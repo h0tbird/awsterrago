@@ -8,7 +8,6 @@ import (
 
 	// stdlib
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"regexp"
@@ -229,35 +228,25 @@ func main() {
 	var reg = regexp.MustCompile("(\\w+)\\.(ResourceConfig|ResourceState)\\.(\\w+)")
 
 	for resKey, resVal := range r {
+
+		// All vertices
 		g.Add(resVal)
+		match := false
+
+		// Dependent edges
 		for _, fieldVal := range resVal.ResourceConfig {
 			submatch := reg.FindStringSubmatch(fieldVal.(string))
 			if submatch != nil {
-				fmt.Printf("g.Connect(dag.BasicEdge(r[\"%s\"], r[\"%s\"]))\n", submatch[1], resKey)
+				g.Connect(dag.BasicEdge(r[submatch[1]], r[resKey]))
+				match = true
 			}
 		}
-	}
 
-	// TODO: Automagic connections
-	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
-	g.Connect(dag.BasicEdge(0, r["nodesRole"]))
-	g.Connect(dag.BasicEdge(0, r["controllersPolicy"]))
-	g.Connect(dag.BasicEdge(0, r["controllersRole"]))
-	g.Connect(dag.BasicEdge(0, r["controlPlanePolicy"]))
-	g.Connect(dag.BasicEdge(0, r["controlPlaneRole"]))
-	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["nodesRoleToNodesPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesRoleToNodesPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["nodesRole"], r["nodesInstanceProfile"]))
-	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controllersRoleToControllersPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersRoleToControllersPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controllersRole"], r["controllersInstanceProfile"]))
-	g.Connect(dag.BasicEdge(r["controlPlanePolicy"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControlPlanePolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["nodesPolicy"], r["controlPlaneRoleToNodesPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToNodesPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controllersPolicy"], r["controlPlaneRoleToControllersPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneRoleToControllersPolicyAttachment"]))
-	g.Connect(dag.BasicEdge(r["controlPlaneRole"], r["controlPlaneInstanceProfile"]))
+		// Non-dependent edges
+		if !match {
+			g.Connect(dag.BasicEdge(0, r[resKey]))
+		}
+	}
 
 	//--------------
 	// Walk the DAG
