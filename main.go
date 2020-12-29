@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"regexp"
 
 	// community
@@ -229,17 +228,15 @@ func main() {
 	g := dag.AcyclicGraph{}
 	var reg = regexp.MustCompile("(\\w+)\\.ResourceState\\.(\\w+)")
 
-	for k1, v1 := range r {
-		g.Add(r[k1])
-		for _, v2 := range v1.ResourceConfig {
-			submatch := reg.FindStringSubmatch(v2.(string))
+	for resKey, resVal := range r {
+		g.Add(resVal)
+		for _, fieldVal := range resVal.ResourceConfig {
+			submatch := reg.FindStringSubmatch(fieldVal.(string))
 			if submatch != nil {
-				fmt.Printf("g.Connect(dag.BasicEdge(r[\"%s\"], r[\"%s\"]))\n", submatch[1], k1)
+				fmt.Printf("g.Connect(dag.BasicEdge(r[\"%s\"], r[\"%s\"]))\n", submatch[1], resKey)
 			}
 		}
 	}
-
-	os.Exit(0)
 
 	// TODO: Automagic connections
 	g.Connect(dag.BasicEdge(0, r["nodesPolicy"]))
